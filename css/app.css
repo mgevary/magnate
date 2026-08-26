@@ -441,6 +441,116 @@ button { font-family: inherit; }
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+/* ── responsive tiers ──────────────────────────────────────────── */
+
+/* notched phones: respect safe areas (env() is 0 on older devices) */
+#topbar { padding-top: calc(8px + env(safe-area-inset-top)); }
+#screen-game { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+#hand { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+
+/* narrow screens (phone portrait): compress seats + centre piles,
+   let the seat row scroll sideways but stay centred when it fits */
+@media (max-width: 640px) {
+  #opponents {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+  }
+  .opp:first-child { margin-left: auto; }
+  .opp:last-child { margin-right: auto; }
+  .opp { min-width: 118px; max-width: 210px; padding: 4px 7px 5px; margin: 0 4px; }
+  .opp-name { font-size: 12px; }
+  .opp-sets { font-size: 10px; }
+  .opp-handfan .card { margin-right: -16px; }
+  .opp-handn { margin: 0 6px 0 12px; }
+  .opp-table .zone { margin: 0 4px 3px 0; }
+  .zone-cards.zc-mini .card + .card { margin-left: -34px; }
+
+  #table-oval { top: 28px; bottom: 140px; left: -30%; right: -30%; }
+
+  #center { min-height: 118px; padding: 4px 2px 0; }
+  .pile { margin: 0 5px; }
+  .deck-stack { width: 66px; height: 92px; }
+  .card.deck-big { width: 62px; height: 86px; }
+  .deck-count { min-width: 22px; height: 22px; line-height: 22px; font-size: 11px; right: -6px; bottom: -6px; }
+  .discard-stack { width: 78px; height: 96px; }
+  .discard-stack .card { left: 3px; top: 2px; }
+  .banner { max-width: 150px; margin: 0 2px; }
+  .banner-turn { font-size: 14px; }
+  .ticker { font-size: 10.5px; }
+  .pile-label { font-size: 8.5px; letter-spacing: 1px; }
+
+  #my-sets .zone { margin-right: 8px; }
+  .zone-cards.zc-small .card + .card { margin-left: -50px; }
+
+  #controls { right: 8px; bottom: 172px; }
+  .btn-end { padding: 10px 14px; font-size: 14px; }
+
+  .play-splash .card.big { width: 120px; height: 168px; }
+  #toast { font-size: 12.5px; bottom: 200px; }
+
+  .room-code { font-size: 32px; letter-spacing: 7px; }
+}
+
+/* short screens (phone landscape): shrink every band so the whole
+   table still fits without scrolling */
+@media (max-height: 500px) {
+  #topbar { padding-top: calc(3px + env(safe-area-inset-top)); padding-bottom: 0; }
+  .topbtn { width: 32px; height: 32px; font-size: 15px; }
+  .opp { min-width: 108px; padding: 3px 6px 4px; }
+  .opp-head .opp-name { font-size: 11px; }
+  .opp-table .zone-label, .zone-label { font-size: 8.5px; margin-top: 1px; }
+  .seats-2 .opp, .seats-3 .opp, .seats-2 .opp:first-child, .seats-2 .opp:last-child,
+  .seats-3 .opp:first-child, .seats-3 .opp:nth-child(3) { transform: none; }
+
+  /* keep seats short: their table scrolls inside a capped strip */
+  .opp-table { max-height: 52px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .opp .card.mini { width: 34px; height: 48px; }
+  .opp .zone-cards.zc-mini .card + .card { margin-left: -24px; }
+  .opp-stats { margin: 2px 0 2px; }
+  .opp-handfan .card { margin-right: -17px; }
+
+  /* bank floats over the felt instead of taking a row */
+  #my-bank {
+    position: absolute;
+    left: 10px; bottom: 134px;
+    z-index: 5;
+    padding: 2px 9px;
+    background: rgba(0,0,0,.45);
+    border-radius: 9px;
+    font-size: 11px;
+  }
+  #my-bank .bank-fan { display: none; }
+
+  #table-oval { top: 20px; bottom: 108px; }
+
+  #center { min-height: 70px; padding: 2px 2px 0; }
+  .deck-stack { width: 50px; height: 70px; }
+  .card.deck-big { width: 46px; height: 64px; }
+  .discard-stack { width: 58px; height: 70px; }
+  .discard-stack .card { width: 48px; height: 67px; left: 2px; top: 1px; }
+  .banner-turn { font-size: 12.5px; }
+  .ticker { font-size: 10px; }
+  .ticker { min-height: 12px; }
+  .pips { margin: 1px 0; }
+  .pile-label { display: none; }
+
+  #my-sets { min-height: 74px; }
+  #my-sets .card.small { width: 50px; height: 70px; }
+  .zone-cards.zc-small .card + .card { margin-left: -36px; }
+
+  #hand { padding: 3px 8px 5px; padding-bottom: calc(5px + env(safe-area-inset-bottom)); }
+  #hand .card { width: 70px; height: 98px; }
+  #controls { bottom: 118px; }
+  #my-bank { bottom: 120px; }
+  .btn-end { padding: 9px 13px; font-size: 13px; }
+
+  #sheet-host.over-game .sheet { bottom: 122px; max-height: 62%; }
+  #toast { bottom: 150px; }
+  .play-splash { top: 42%; }
+  .play-splash .card.big { width: 108px; height: 151px; }
+}
+
 /* ── rules ─────────────────────────────────────────────────────── */
 #screen-rules { height: 100%; display: flex; flex-direction: column; }
 .rules-head { display: flex; align-items: center; padding: 10px; }
