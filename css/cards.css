@@ -51,7 +51,6 @@
 
 .prop-art { flex: 1; display: flex; align-items: flex-end; background: linear-gradient(#fdfbf4, #efe9d8); position: relative; overflow: hidden; }
 .skyline { width: 100%; height: 78%; display: block; }
-.card.mini .prop-art { display: none; }
 .art-img {
   position: absolute;
   left: 0; top: 0; width: 100%; height: 100%;
@@ -87,10 +86,8 @@
 }
 .card.big .prop-color-label { font-size: 10px; padding-bottom: 5px; }
 
-/* mini property = colour block + name strip */
+/* mini property = colour band + artwork strip */
 .card.mini { justify-content: flex-start; }
-.card.mini.c-prop { background: var(--cc); }
-.card.mini.c-prop .prop-band { background: transparent; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.6); }
 
 /* ── wild ─────────────────────────────────────────────────────── */
 .wild-band { min-height: 26px; padding-top: 9px; }

@@ -36,6 +36,32 @@ function seatRect(playerIdx) {
   return n ? n.getBoundingClientRect() : null;
 }
 
+// Centre-table showcase: when another player plays a card, show its full
+// face large over the felt for a beat before it flies on.
+var splashTimer = null;
+export function splash(card) {
+  var layer = qs('#fx-layer');
+  if (!layer) return;
+  var old = document.getElementById('play-splash');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+  if (splashTimer) { clearTimeout(splashTimer); splashTimer = null; }
+
+  var node = el('div', { class: 'play-splash', id: 'play-splash' });
+  node.appendChild(cardEl(card, 'big'));
+  layer.appendChild(node);
+  // double rAF so the transition from the initial state actually runs
+  var raf = window.requestAnimationFrame
+    ? function (f) { window.requestAnimationFrame(f); }
+    : function (f) { setTimeout(f, 16); };
+  raf(function () { raf(function () { node.className = 'play-splash on'; }); });
+  splashTimer = setTimeout(function () {
+    node.className = 'play-splash';
+    setTimeout(function () {
+      if (node.parentNode) node.parentNode.removeChild(node);
+    }, 260);
+  }, 950);
+}
+
 // Consume state.events and turn them into flights. Called right after a
 // render so source/target rects are current.
 export function animateEvents(state) {
@@ -43,6 +69,11 @@ export function animateEvents(state) {
   state.events = [];
   var delay = 0;
   events.forEach(function (ev) {
+    if (ev.card && typeof ev.player === 'number' && ev.player !== 0 &&
+        (ev.type === 'action' || ev.type === 'rent' || ev.type === 'property' ||
+         ev.type === 'bank' || ev.type === 'build' || ev.type === 'jsn')) {
+      splash(ev.card);
+    }
     if (ev.type === 'draw') {
       var n = Math.min(ev.count, 5);
       for (var i = 0; i < n; i++) {
