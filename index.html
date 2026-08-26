@@ -80,5 +80,12 @@
 <div id="toast"></div>
 
 <script type="module" src="js/main.js"></script>
+<script>
+// Offline support: after the first online visit the whole game is cached
+// on-device and runs with no network (plain script — ES5, Safari 12 safe).
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function () { /* offline-first is best-effort */ });
+}
+</script>
 </body>
 </html>
