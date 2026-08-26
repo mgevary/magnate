@@ -364,6 +364,7 @@ button { font-family: inherit; }
   user-select: text;
 }
 .rules-body h2 { margin: 20px 0 8px; font-size: 19px; color: #e8c53a; }
+.rules-body a { color: #7fd4ff; text-decoration: underline; }
 .rules-body p, .rules-body li { font-size: 15px; line-height: 1.5; margin-bottom: 6px; }
 .rules-body ul, .rules-body ol { padding-left: 22px; }
 .rules-table { border-collapse: collapse; width: 100%; margin: 8px 0; }

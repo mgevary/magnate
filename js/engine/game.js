@@ -73,9 +73,11 @@ function findById(arr, id) {
 export function isZoneComplete(zone) {
   var size = COLORS[zone.color].size;
   if (zone.cards.length < size) return false;
-  // A set of rainbow wilds alone is never complete.
+  // Hasbro FAQ 942: a set always needs at least one STANDARD property
+  // card — any number of wildcards may fill the rest, but wildcards
+  // alone (two-colour or rainbow) never complete a set.
   for (var i = 0; i < zone.cards.length; i++) {
-    if (!isRainbowWild(zone.cards[i])) return true;
+    if (zone.cards[i].kind === 'property') return true;
   }
   return false;
 }
@@ -198,6 +200,7 @@ export function newGame(config) {
     phase: 'main',
     pending: null,
     winner: null,
+    armed: null,
     turnCount: 1,
     zoneSeq: 0,
     events: [],
@@ -230,6 +233,11 @@ function drawCards(state, playerIdx, n) {
 
 function startTurn(state) {
   var p = state.players[state.active];
+  // An off-turn completion converts to the win here, on their own turn.
+  if (completeSetColorCount(p) >= SETS_TO_WIN) {
+    declareWin(state, state.active);
+    return;
+  }
   var n = p.hand.length === 0 ? DRAW_ON_EMPTY_HAND : DRAW_PER_TURN;
   emit(state, { type: 'turn', player: state.active });
   log(state, '— ' + p.name + '’s turn —');
@@ -246,16 +254,34 @@ function advanceTurn(state) {
 
 /* ── win check ───────────────────────────────────────────────────── */
 
+function declareWin(state, idx) {
+  state.winner = idx;
+  state.phase = 'over';
+  state.pending = null;
+  emit(state, { type: 'win', player: idx });
+  log(state, '★ ' + pname(state, idx) + ' wins with ' + SETS_TO_WIN + ' complete sets!');
+}
+
+// Official 2008 rulebook: "If you realize you've won during someone
+// else's turn, you must wait until it's your turn to say it!" — so only
+// the ACTIVE player wins immediately; an off-turn completion (e.g. via a
+// Hard Bargain hand-over) is announced and converts at the start of that
+// player's next turn, giving opponents one last window to break the set.
 function checkWin(state) {
   if (state.winner !== null) return;
+  if (completeSetColorCount(state.players[state.active]) >= SETS_TO_WIN) {
+    declareWin(state, state.active);
+    return;
+  }
   for (var i = 0; i < state.players.length; i++) {
-    if (completeSetColorCount(state.players[i]) >= SETS_TO_WIN) {
-      state.winner = i;
-      state.phase = 'over';
-      state.pending = null;
-      emit(state, { type: 'win', player: i });
-      log(state, '★ ' + pname(state, i) + ' wins with ' + SETS_TO_WIN + ' complete sets!');
-      return;
+    if (i === state.active) continue;
+    var has3 = completeSetColorCount(state.players[i]) >= SETS_TO_WIN;
+    if (has3 && state.armed !== i) {
+      state.armed = i;
+      log(state, '⚠ ' + pname(state, i) + ' holds ' + SETS_TO_WIN + ' complete sets — they win at the start of their next turn unless a set is broken!');
+    } else if (!has3 && state.armed === i) {
+      state.armed = null;
+      log(state, pname(state, i) + ' no longer holds ' + SETS_TO_WIN + ' complete sets.');
     }
   }
 }

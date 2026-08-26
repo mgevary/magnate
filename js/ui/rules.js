@@ -4,7 +4,7 @@
 
 export var RULES_HTML = [
 '<h2>Object of the game</h2>',
-'<p>Be the first player to own <b>3 complete property sets in 3 different colours</b>. The moment you do — even in the middle of a payment — you win.</p>',
+'<p>Be the first player to own <b>3 complete property sets in 3 different colours</b>. Completing your third set on your own turn wins immediately. If it happens during someone else’s turn (say, a swap hands you the last card), you declare the win <b>at the start of your next turn</b> — opponents get one last chance to break a set before then. (That’s the official rule: “If you realize you’ve won during someone else’s turn, you must wait until it’s your turn to say it!”)</p>',
 
 '<h2>Setup</h2>',
 '<p>Shuffle the 106-card deck and deal <b>5 cards</b> to each player. On your turn you draw and play; between turns you watch out for rent demands and steals.</p>',
@@ -34,8 +34,9 @@ export var RULES_HTML = [
 
 '<h2>Properties &amp; wildcards</h2>',
 '<ul>',
-'<li><b>Two-colour wilds</b> count as either of their colours; flip them freely on your turn. A set made only of two-colour wilds is legal.</li>',
-'<li>The <b>rainbow wild</b> counts as any colour, but a set of only rainbow wilds is never complete, and it has no cash value.</li>',
+'<li><b>Two-colour wilds</b> count as either of their colours; flip them freely on your turn.</li>',
+'<li>The <b>rainbow wild</b> counts as any colour, but has no cash value.</li>',
+'<li>Every set needs <b>at least one standard property card</b> — any number of wildcards may fill the rest, but wildcards alone never complete a set (official FAQ ruling).</li>',
 '<li>You may build second sets of a colour you already completed.</li>',
 '</ul>',
 
@@ -73,7 +74,7 @@ export var RULES_HTML = [
 '<li>The deck never runs out: the discard pile is reshuffled into a new draw pile.</li>',
 '<li>You may pay with properties even from your own complete set (breaking it) — but opponents’ Land Grab / Hard Bargain can never target complete sets. Only Takeover beats a complete set.</li>',
 '<li>Wildcards are stolen and swapped just like normal properties.</li>',
-'<li>Cards received as payment can complete a set and win you the game instantly.</li>',
+'<li>Cards received as payment can complete a set — winning instantly on your own turn, or at the start of your next turn if it happens off-turn.</li>',
 '<li>Buildings can be paid with (3M/4M) and go to the receiver’s bank.</li>',
 '</ul>',
 
@@ -88,5 +89,16 @@ export var RULES_HTML = [
 '<tr><td>Pass the Hat</td><td>It’s My Birthday</td></tr>',
 '<tr><td>Windfall</td><td>Pass Go</td></tr>',
 '</table>',
-'<p class="rules-footnote">Magnate is an original fan-made game: all artwork, names and text are original. Card counts, values and rules match the classic game so that strategy guides for it apply directly.</p>'
+'<p class="rules-footnote">Magnate is an original fan-made game: all artwork, names and text are original. Card counts, values and rules match the classic game so that strategy guides for it apply directly.</p>',
+
+'<h2>Official rules &amp; resources</h2>',
+'<p>Magnate follows the official rules of Hasbro’s Monopoly Deal. To read them at the source (links open in a new tab):</p>',
+'<ul>',
+'<li><a href="https://instructions.hasbro.com/en-us/instruction/monopoly-deal-card-game-instructions" target="_blank" rel="noopener noreferrer">Hasbro’s official instructions page</a> — the current rulebook, straight from Hasbro.</li>',
+'<li><a href="https://instructions.hasbro.com/api/download/E3113_en-us_monopoly-deal-card-game-instructions.pdf" target="_blank" rel="noopener noreferrer">Official rulebook PDF (E3113)</a> — the printed sheet that ships in the box.</li>',
+'<li><a href="https://hasbro-new.custhelp.com/app/answers/detail/a_id/938" target="_blank" rel="noopener noreferrer">Hasbro customer-service FAQ</a> — official rulings on tricky cases (wildcards, payments, Just Say No, and more via the related answers).</li>',
+'<li><a href="https://monopolydealrules.com/" target="_blank" rel="noopener noreferrer">monopolydealrules.com</a> — a long-running fan FAQ covering edge cases card by card.</li>',
+'<li><a href="https://www.monopolyland.com/monopoly-deal-rules/" target="_blank" rel="noopener noreferrer">Monopoly Land’s rules guide</a> — collects Hasbro’s official social-media rulings in one place.</li>',
+'</ul>',
+'<p class="rules-footnote">Monopoly Deal is a trademark of Hasbro. Links are provided for reference; Magnate is not affiliated with or endorsed by Hasbro.</p>'
 ].join('\n');
