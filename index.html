@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Magnate — the property card game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Magnate">
+<meta name="description" content="Magnate — a fast fan-made property-trading card game with AI opponents. Plays entirely in your browser.">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/cards.css">
+<script>
+// ES5 error overlay — deliberately NOT a module so it runs even when the
+// module graph fails to parse on an old browser. Any error becomes visible
+// instead of a silent white screen.
+(function () {
+  function show(msg) {
+    var box = document.getElementById('err-overlay');
+    if (!box) return;
+    box.style.display = 'block';
+    var line = document.createElement('div');
+    line.appendChild(document.createTextNode(msg));
+    box.appendChild(line);
+  }
+  window.onerror = function (msg, src, line) {
+    show(msg + ' @ ' + (src || '').split('/').pop() + ':' + line);
+    return false;
+  };
+  window.addEventListener('unhandledrejection', function (e) {
+    show('Promise rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+  });
+})();
+</script>
+</head>
+<body>
+<div id="err-overlay"></div>
+
+<section id="screen-home">
+  <div class="home-inner">
+    <div class="logo">
+      <div class="logo-m">M</div>
+      <h1>MAGNATE</h1>
+      <div class="logo-sub">the property card game</div>
+    </div>
+    <div id="home-menu"></div>
+    <div class="home-foot">A fan-made game &middot; plays entirely on this device</div>
+  </div>
+</section>
+
+<section id="screen-game" style="display:none">
+  <header id="topbar">
+    <button id="game-home-btn" class="topbtn" type="button">&#9776;</button>
+    <div id="opponents"></div>
+    <button id="game-rules-btn" class="topbtn" type="button">?</button>
+  </header>
+  <div id="midbar"></div>
+  <div id="my-area">
+    <div id="my-sets"></div>
+    <div id="my-bank"></div>
+  </div>
+  <div id="hand-wrap"><div id="hand"></div></div>
+  <div id="controls"></div>
+</section>
+
+<section id="screen-rules" style="display:none">
+  <header class="rules-head">
+    <button id="rules-back" class="topbtn" type="button">&#8592;</button>
+    <h2>How to play</h2>
+  </header>
+  <div id="rules-body" class="rules-body"></div>
+</section>
+
+<div id="sheet-host"></div>
+<div id="toast"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+/* cards.css — code-drawn card faces. Base card 96x134 (5:7). Sizes are
+   fixed px pairs because Safari 12 lacks aspect-ratio. */
+
+.card {
+  position: relative;
+  width: 96px; height: 134px;
+  border-radius: 8px;
+  background: #f7f3e8;
+  color: #23201a;
+  box-shadow: 0 2px 4px rgba(0,0,0,.35);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.card.small { width: 72px; height: 101px; border-radius: 6px; }
+.card.big { width: 150px; height: 210px; border-radius: 12px; }
+.card.mini { width: 46px; height: 64px; border-radius: 4px; }
+
+.val-badge {
+  position: absolute;
+  top: 3px; left: 3px;
+  min-width: 20px; height: 20px; line-height: 20px;
+  border-radius: 50%;
+  background: #23201a; color: #f7f3e8;
+  font-size: 10px; font-weight: 800;
+  text-align: center;
+  padding: 0 2px;
+  z-index: 3;
+}
+.card.big .val-badge { min-width: 28px; height: 28px; line-height: 28px; font-size: 13px; top: 5px; left: 5px; }
+.card.mini .val-badge, .card.small .val-badge { display: none; }
+.val-zero { background: #888; }
+
+/* ── property ─────────────────────────────────────────────────── */
+.prop-band {
+  background: var(--cc);
+  color: var(--ci);
+  font-size: 9px;
+  font-weight: 800;
+  text-align: center;
+  padding: 6px 25px 4px;
+  line-height: 1.15;
+  min-height: 32px;
+  text-transform: uppercase;
+  letter-spacing: .2px;
+}
+.card.big .prop-band { font-size: 13px; padding: 8px 34px 5px; min-height: 46px; }
+.card.mini .prop-band { font-size: 6px; padding: 3px 2px 2px; min-height: 18px; letter-spacing: 0; }
+.card.small .prop-band { font-size: 7px; padding: 5px 6px 3px; min-height: 26px; }
+
+.prop-art { flex: 1; display: flex; align-items: flex-end; background: linear-gradient(#fdfbf4, #efe9d8); }
+.skyline { width: 100%; height: 78%; display: block; }
+.card.mini .prop-art { display: none; }
+
+.rent-ladder { padding: 3px 8px 4px; background: #f7f3e8; }
+.rrow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8.5px;
+  border-bottom: 1px dotted rgba(0,0,0,.2);
+  padding: 1px 0;
+}
+.rrow:last-child { border-bottom: 0; }
+.rrow-n::after { content: ' card(s)'; opacity: .6; }
+.rrow-m { font-weight: 800; }
+.card.big .rrow { font-size: 12px; padding: 2px 0; }
+.card.mini .rent-ladder, .card.small .rent-ladder { display: none; }
+.card.mini .prop-color-label { display: none; }
+
+.prop-color-label {
+  font-size: 7px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: .55;
+  padding-bottom: 3px;
+  background: #f7f3e8;
+}
+.card.big .prop-color-label { font-size: 10px; padding-bottom: 5px; }
+
+/* mini property = colour block + name strip */
+.card.mini { justify-content: flex-start; }
+.card.mini.c-prop { background: var(--cc); }
+.card.mini.c-prop .prop-band { background: transparent; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.6); }
+
+/* ── wild ─────────────────────────────────────────────────────── */
+.wild-band { min-height: 26px; padding-top: 9px; }
+.wild-two { flex: 1; display: flex; padding: 4px; }
+.wild-half {
+  flex: 1;
+  border: 1px solid;
+  border-radius: 5px;
+  margin: 2px;
+  padding: 2px;
+  min-width: 0;
+}
+.wild-half-name { font-size: 7px; font-weight: 800; text-transform: uppercase; text-align: center; }
+.wild-half .rent-ladder { padding: 1px 2px; background: transparent; }
+.wild-half .rrow { font-size: 7px; }
+.wild-half .rrow-n::after { content: ''; }
+.card.big .wild-half-name { font-size: 10px; }
+.card.big .wild-half .rrow { font-size: 10px; }
+.card.mini .wild-two, .card.small .wild-two { display: none; }
+.card.mini.c-wild, .card.small.c-wild { justify-content: center; }
+.card.mini.c-wild .wild-band, .card.small.c-wild .wild-band { min-height: 60%; }
+
+.wild-body { flex: 1; padding: 8px 6px; text-align: center; }
+.wild-big { font-size: 18px; font-weight: 900; letter-spacing: 2px; margin: 8px 0 6px; }
+.wild-note { font-size: 8.5px; line-height: 1.35; opacity: .75; }
+.card.big .wild-note { font-size: 11px; }
+.card.mini .wild-body, .card.small .wild-body { display: none; }
+
+/* ── money ────────────────────────────────────────────────────── */
+.c-money { background: #efe9d6; align-items: center; justify-content: center; }
+.money-oval {
+  width: 68%; height: 44%;
+  border-radius: 50%;
+  background: var(--tint);
+  border: 3px solid rgba(0,0,0,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.4);
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.35);
+}
+.money-val { font-size: 30px; font-weight: 900; }
+.card.mini .money-val { font-size: 16px; }
+.card.small .money-val { font-size: 22px; }
+.card.big .money-val { font-size: 46px; }
+.money-m { font-size: 13px; font-weight: 800; margin-top: 8px; }
+.card.mini .money-m { font-size: 8px; margin-top: 4px; }
+.money-word { margin-top: 6px; font-size: 9px; letter-spacing: 3px; font-weight: 700; opacity: .5; }
+.card.mini .money-word { display: none; }
+
+/* ── rent ─────────────────────────────────────────────────────── */
+.c-rent .prop-band { min-height: 26px; padding-top: 8px; letter-spacing: 3px; }
+.rent-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
+.rent-circle {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 3px solid rgba(0,0,0,.3);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 900; font-size: 12px;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6);
+}
+.card.big .rent-circle { width: 84px; height: 84px; font-size: 17px; }
+.card.mini .rent-mid, .card.small .rent-mid { }
+.card.mini .rent-circle { width: 26px; height: 26px; font-size: 7px; border-width: 2px; }
+.card.small .rent-circle { width: 38px; height: 38px; font-size: 9px; }
+.c-rent .act-text { padding-bottom: 6px; }
+.card.mini.c-rent .act-text, .card.small.c-rent .act-text { display: none; }
+
+/* ── action ───────────────────────────────────────────────────── */
+.act-band {
+  background: #2f2c26;
+  color: #e8dfc8;
+  font-size: 8px;
+  letter-spacing: 3px;
+  text-align: center;
+  padding: 7px 24px 4px;
+  font-weight: 700;
+}
+.card.mini .act-band, .card.small .act-band { padding-top: 4px; }
+.act-name {
+  text-align: center;
+  font-weight: 900;
+  font-size: 12.5px;
+  padding: 5px 4px 0;
+  line-height: 1.1;
+}
+.card.big .act-name { font-size: 18px; padding-top: 9px; }
+.card.mini .act-name { font-size: 7px; padding-top: 2px; }
+.card.small .act-name { font-size: 9px; }
+.act-icon { flex: 1; display: flex; align-items: center; justify-content: center; color: #5a5344; }
+.icon { width: 40px; height: 40px; display: block; }
+.card.big .icon { width: 64px; height: 64px; }
+.card.mini .icon { width: 20px; height: 20px; }
+.card.small .icon { width: 26px; height: 26px; }
+.icon-wrap { display: block; }
+.x2 { font-size: 30px; font-weight: 900; color: #5a5344; }
+.card.mini .x2 { font-size: 15px; }
+.card.big .x2 { font-size: 48px; }
+.act-text {
+  font-size: 8px;
+  line-height: 1.3;
+  text-align: center;
+  padding: 0 6px 8px;
+  opacity: .8;
+}
+.card.big .act-text { font-size: 11px; padding: 0 10px 12px; }
+.card.mini .act-text, .card.small .act-text { display: none; }
+
+/* accent colours per action family */
+.a-dealBreaker .act-band { background: #6d2430; }
+.a-justSayNo .act-band { background: #274a72; }
+.a-passGo .act-band { background: #2e5e3a; }
+.a-slyDeal .act-band, .a-forcedDeal .act-band { background: #574370; }
+.a-debtCollector .act-band, .a-birthday .act-band { background: #7a5a22; }
+.a-dealBreaker .act-icon { color: #6d2430; }
+.a-justSayNo .act-icon { color: #274a72; }
+.a-passGo .act-icon { color: #2e5e3a; }
+.a-slyDeal .act-icon, .a-forcedDeal .act-icon { color: #574370; }
+.a-debtCollector .act-icon, .a-birthday .act-icon { color: #7a5a22; }
+
+/* ── card back ────────────────────────────────────────────────── */
+.c-back {
+  background: #35513f;
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 6px, transparent 6px, transparent 12px);
+  align-items: center;
+  justify-content: center;
+  border: 4px solid #f7f3e8;
+}
+.deck-back { width: 58px; height: 81px; }
+.back-ring {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 2px solid #d8a531;
+  color: #d8a531;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 900;
+}
+.discard-top { display: inline-flex; }

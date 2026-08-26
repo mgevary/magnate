@@ -1,0 +1,92 @@
+// rules.js — the complete rules reference, written for this game but
+// matching the official rules of the classic property-trading card game
+// exactly (including the published FAQ rulings). Original text.
+
+export var RULES_HTML = [
+'<h2>Object of the game</h2>',
+'<p>Be the first player to own <b>3 complete property sets in 3 different colours</b>. The moment you do — even in the middle of a payment — you win.</p>',
+
+'<h2>Setup</h2>',
+'<p>Shuffle the 106-card deck and deal <b>5 cards</b> to each player. On your turn you draw and play; between turns you watch out for rent demands and steals.</p>',
+
+'<h2>Your turn</h2>',
+'<ol>',
+'<li><b>Draw 2 cards.</b> If you start your turn with no cards in hand, draw 5 instead.</li>',
+'<li><b>Play up to 3 cards.</b> Playing a card means: putting money in your <b>bank</b>, laying a <b>property</b> on the table, or playing an <b>action</b> card (including rent). You never have to play any.</li>',
+'<li><b>Discard down to 7</b> cards at the end of your turn if you hold more.</li>',
+'</ol>',
+'<p>Rearranging your own properties — moving wildcards between sets, moving a House/Hotel between complete sets — is <b>free</b> and doesn’t count as a play, but only on your own turn.</p>',
+
+'<h2>The three piles in front of you</h2>',
+'<p><b>Bank:</b> money and any action cards played as money. Pays your debts. Once a card is in the bank it stays money — it never becomes an action again.</p>',
+'<p><b>Properties:</b> your colour sets. A set is complete when it has the number of cards shown on the card (2, 3 or 4). Extra cards of a colour start a second set — a set never holds more than its size.</p>',
+'<p><b>Hand:</b> hidden from other players. Cards in hand are safe; nothing in your hand can be stolen or demanded.</p>',
+
+'<h2>Money &amp; paying debts</h2>',
+'<ul>',
+'<li>Every card has a value except the rainbow wild (0). Action and rent cards may always be banked as money instead of used.</li>',
+'<li>When you owe money, you choose what to hand over, from your <b>bank and/or table</b> — never from your hand.</li>',
+'<li><b>No change is given.</b> Overpaying is your loss.</li>',
+'<li>Properties handed over as payment go into the receiver’s property collection; money and buildings go to their bank.</li>',
+'<li>If you can’t cover the debt, you hand over <b>everything payable</b> you have — and if you have nothing on the table, you pay nothing at all.</li>',
+'<li>The rainbow wild can <b>never</b> be used to pay. It stays put.</li>',
+'</ul>',
+
+'<h2>Properties &amp; wildcards</h2>',
+'<ul>',
+'<li><b>Two-colour wilds</b> count as either of their colours; flip them freely on your turn. A set made only of two-colour wilds is legal.</li>',
+'<li>The <b>rainbow wild</b> counts as any colour, but a set of only rainbow wilds is never complete, and it has no cash value.</li>',
+'<li>You may build second sets of a colour you already completed.</li>',
+'</ul>',
+
+'<h2>Rent</h2>',
+'<ul>',
+'<li>A <b>two-colour rent card</b> charges <b>every</b> opponent rent for one of its colours you own.</li>',
+'<li>An <b>any-colour rent card</b> charges <b>one</b> opponent of your choice, for any colour you own.</li>',
+'<li>Rent equals the amount on the property card ladder for how many cards you have in that colour (your best set of it), plus 3M for a House and 4M more for a Hotel on a complete set.</li>',
+'<li><b>Double The Rent</b> is played together with a rent card and doubles it; it costs one of your 3 plays. Two of them with one rent card = <b>4×</b> rent (that’s all 3 plays).</li>',
+'</ul>',
+
+'<h2>Action cards</h2>',
+'<table class="rules-table">',
+'<tr><th>Card</th><th>Value</th><th>What it does</th></tr>',
+'<tr><td><b>Takeover</b></td><td>5M</td><td>Steal a <b>complete</b> set from any player — House and Hotel included.</td></tr>',
+'<tr><td><b>Veto</b></td><td>4M</td><td>Cancel an action played against you (rent, a steal, anything). Played from your hand at any time, costs no play. A Veto can be cancelled by another Veto.</td></tr>',
+'<tr><td><b>Land Grab</b></td><td>3M</td><td>Steal one property. Cannot touch a complete set.</td></tr>',
+'<tr><td><b>Hard Bargain</b></td><td>3M</td><td>Swap one of your properties for an opponent’s. Neither side may come from a complete set.</td></tr>',
+'<tr><td><b>Debt Collector</b></td><td>3M</td><td>One player of your choice pays you 5M.</td></tr>',
+'<tr><td><b>Pass the Hat</b></td><td>2M</td><td>Every player pays you 2M.</td></tr>',
+'<tr><td><b>Windfall</b></td><td>1M</td><td>Draw 2 extra cards.</td></tr>',
+'<tr><td><b>House / Hotel</b></td><td>3M / 4M</td><td>Add to a <b>complete</b> set (not Railroads or Utilities): +3M rent, then +4M more. House first, then Hotel. If the set breaks, buildings go to your bank.</td></tr>',
+'<tr><td><b>Double The Rent</b></td><td>1M</td><td>See Rent above.</td></tr>',
+'</table>',
+
+'<h2>Veto details</h2>',
+'<ul>',
+'<li>A Veto cancels the action <b>against you only</b> — if rent was charged to everyone, the others still pay.</li>',
+'<li>Veto vs. Veto: the attacker may counter your Veto with theirs, and you may counter back. An odd number of Vetoes kills the action; an even number lets it stand.</li>',
+'<li>Using a Veto never costs a play, even on your own turn.</li>',
+'</ul>',
+
+'<h2>Fine points (official rulings)</h2>',
+'<ul>',
+'<li>The deck never runs out: the discard pile is reshuffled into a new draw pile.</li>',
+'<li>You may pay with properties even from your own complete set (breaking it) — but opponents’ Land Grab / Hard Bargain can never target complete sets. Only Takeover beats a complete set.</li>',
+'<li>Wildcards are stolen and swapped just like normal properties.</li>',
+'<li>Cards received as payment can complete a set and win you the game instantly.</li>',
+'<li>Buildings can be paid with (3M/4M) and go to the receiver’s bank.</li>',
+'</ul>',
+
+'<h2>If you know the classic card game</h2>',
+'<p>Magnate plays identically to the well-known property-trading card game. The card names differ:</p>',
+'<table class="rules-table">',
+'<tr><th>Magnate</th><th>Classic equivalent</th></tr>',
+'<tr><td>Takeover</td><td>Deal Breaker</td></tr>',
+'<tr><td>Veto</td><td>Just Say No</td></tr>',
+'<tr><td>Land Grab</td><td>Sly Deal</td></tr>',
+'<tr><td>Hard Bargain</td><td>Forced Deal</td></tr>',
+'<tr><td>Pass the Hat</td><td>It’s My Birthday</td></tr>',
+'<tr><td>Windfall</td><td>Pass Go</td></tr>',
+'</table>',
+'<p class="rules-footnote">Magnate is an original fan-made game: all artwork, names and text are original. Card counts, values and rules match the classic game so that strategy guides for it apply directly.</p>'
+].join('\n');
