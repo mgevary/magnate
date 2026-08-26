@@ -25,7 +25,10 @@ export function closeSheet() {
 export function showSheet(opts) {
   var h = ensureHost();
   clear(h);
-  h.className = 'open';
+  // In-game, the sheet floats above the hand so your cards stay visible
+  // while you choose targets, payments, or responses.
+  var game = qs('#screen-game');
+  h.className = 'open' + (game && game.style.display !== 'none' ? ' over-game' : '');
 
   var backdrop = el('div', {
     class: 'sheet-backdrop',
