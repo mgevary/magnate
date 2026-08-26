@@ -7,8 +7,9 @@ import { render, showToast } from './ui/render.js';
 import { el, clear, qs } from './ui/dom.js';
 import {
   showPlaySheet, showVetoSheet, showPaymentSheet, showDiscardSheet,
-  showRearrangeSheet, showGameOverSheet, showSheet, closeSheet
+  showRearrangeSheet, showGameOverSheet, showOpponentSheet, showSheet, closeSheet
 } from './ui/sheets.js';
+import { animateEvents } from './ui/fx.js';
 import { RULES_HTML } from './ui/rules.js';
 
 var SAVE_KEY = 'magnate-save-v1';
@@ -168,6 +169,9 @@ var handlers = {
   },
   onEndTurn: function () {
     humanAct({ type: 'endTurn' });
+  },
+  onOpponent: function (idx) {
+    showOpponentSheet(App.state, idx);
   }
 };
 
@@ -185,6 +189,7 @@ function loop() {
   var state = App.state;
   save();
   render(state, handlers);
+  animateEvents(state);
 
   if (state.winner !== null) {
     stopBots();

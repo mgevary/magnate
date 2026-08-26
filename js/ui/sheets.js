@@ -608,6 +608,43 @@ export function showRearrangeSheet(state, card, zone, act) {
   showSheet({ title: cardName(card), content: content, buttons: buttons });
 }
 
+/* ── opponent inspection ─────────────────────────────────────────── */
+
+export function showOpponentSheet(state, idx) {
+  var p = state.players[idx];
+  var content = el('div', {});
+  content.appendChild(el('div', { class: 'sheet-hint', text: p.hand.length + ' cards in hand (hidden)' }));
+
+  content.appendChild(el('div', { class: 'group-label', text: 'Bank — ' + p.bank.reduce(function (s, c) { return s + c.value; }, 0) + 'M' }));
+  if (p.bank.length) {
+    var bankRow = el('div', { class: 'pick-cards' });
+    p.bank.forEach(function (c) { bankRow.appendChild(cardEl(c, 'small')); });
+    content.appendChild(bankRow);
+  } else {
+    content.appendChild(el('div', { class: 'sheet-hint', text: 'empty' }));
+  }
+
+  if (p.sets.length) {
+    p.sets.forEach(function (z) {
+      var complete = isZoneComplete(z);
+      content.appendChild(el('div', {
+        class: 'group-label',
+        text: COLORS[z.color].label + ' — ' + z.cards.length + '/' + COLORS[z.color].size +
+          (complete ? ' ★ complete (rent ' + zoneRent(z) + 'M)' : '')
+      }));
+      var row = el('div', { class: 'pick-cards' });
+      z.cards.forEach(function (c) { row.appendChild(cardEl(c, 'small')); });
+      if (z.house) row.appendChild(cardEl(z.house, 'small'));
+      if (z.hotel) row.appendChild(cardEl(z.hotel, 'small'));
+      content.appendChild(row);
+    });
+  } else {
+    content.appendChild(el('div', { class: 'group-label', text: 'No properties yet' }));
+  }
+
+  showSheet({ title: p.name + '’s table', content: content, buttons: [], cancelLabel: 'Close' });
+}
+
 /* ── game over ───────────────────────────────────────────────────── */
 
 export function showGameOverSheet(state, onNew, onHome) {

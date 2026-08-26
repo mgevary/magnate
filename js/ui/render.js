@@ -1,133 +1,177 @@
-// render.js — draws the table from engine state. Re-renders regions on
-// each dispatch (state changes are discrete taps — no per-frame work,
-// which keeps the old iPad's compositor happy).
+// render.js — draws the round table from engine state. Every card on the
+// table is rendered by the same cardEl() art that draws the hand, just
+// smaller, so what you see played is what you hold. Re-renders regions on
+// each dispatch (discrete taps — no per-frame work for the old iPad).
 
 import { COLORS, cardName } from '../engine/cards.js';
 import { isZoneComplete, zoneRent, bankValue, completeSetColorCount } from '../engine/game.js';
 import { el, clear, qs } from './dom.js';
-import { cardEl, chipEl, backEl } from './cardview.js';
+import { cardEl, backEl } from './cardview.js';
 
-function zoneChip(zone, onTap) {
-  var meta = COLORS[zone.color];
-  var complete = isZoneComplete(zone);
-  var chip = el('div', { class: 'zchip' + (complete ? ' done' : '') });
-  var stack = el('div', { class: 'zstack' });
-  zone.cards.forEach(function (c) { stack.appendChild(chipEl(c)); });
-  chip.appendChild(stack);
-  var label = zone.cards.length + '/' + meta.size;
-  if (zone.house) label += ' ⌂';
-  if (zone.hotel) label += '⌂';
-  chip.appendChild(el('div', { class: 'zlabel', text: label }));
-  chip.style.borderColor = complete ? '#e0b64f' : 'rgba(255,255,255,.25)';
-  if (onTap) chip.addEventListener('click', onTap);
-  return chip;
+// Deterministic "messy pile" jitter from a card id (stable across renders).
+function jitter(id, range) {
+  var h = 0;
+  for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return (((h % 1000) / 1000) - 0.5) * 2 * range;
 }
 
-function opponentPanel(state, idx) {
+/* ── shared pieces ───────────────────────────────────────────────── */
+
+// A zone as overlapping real card faces + a label underneath.
+function zoneEl(zone, size, onTapCard) {
+  var complete = isZoneComplete(zone);
+  var cardsRow = el('div', { class: 'zone-cards zc-' + size });
+  var all = zone.cards.slice();
+  if (zone.house) all.push(zone.house);
+  if (zone.hotel) all.push(zone.hotel);
+  all.forEach(function (c) {
+    var cv = cardEl(c, size);
+    if (onTapCard) cv.addEventListener('click', function () { onTapCard(c, zone); });
+    cardsRow.appendChild(cv);
+  });
+  var label = COLORS[zone.color].label + ' ' + zone.cards.length + '/' + COLORS[zone.color].size + (complete ? ' ★' : '');
+  return el('div', { class: 'zone' + (complete ? ' done' : '') }, [
+    cardsRow,
+    el('div', { class: 'zone-label', text: label })
+  ]);
+}
+
+// Overlapping money-card fan for a bank.
+function bankFan(player, size) {
+  var fan = el('div', { class: 'bank-fan zc-' + size });
+  player.bank.forEach(function (c) {
+    fan.appendChild(cardEl(c, size));
+  });
+  return fan;
+}
+
+/* ── opponent seats ──────────────────────────────────────────────── */
+
+function opponentPanel(state, idx, onTap) {
   var p = state.players[idx];
   var isActive = state.active === idx && state.winner === null;
-  var panel = el('div', { class: 'opp' + (isActive ? ' active' : '') });
+  var panel = el('div', { class: 'opp' + (isActive ? ' active' : ''), 'data-player': String(idx) });
+
   panel.appendChild(el('div', { class: 'opp-head' }, [
     el('span', { class: 'opp-name', text: p.name }),
     el('span', { class: 'opp-sets', text: completeSetColorCount(p) + '/3 ★' })
   ]));
-  panel.appendChild(el('div', { class: 'opp-stats' }, [
-    el('span', { class: 'opp-hand', text: p.hand.length + ' in hand' }),
-    el('span', { class: 'opp-bank', text: 'Bank ' + bankValue(p) + 'M' })
-  ]));
-  var zrow = el('div', { class: 'opp-zones' });
-  p.sets.forEach(function (z) { zrow.appendChild(zoneChip(z, null)); });
-  panel.appendChild(zrow);
+
+  // hand: fanned card backs
+  var handFan = el('div', { class: 'opp-handfan' });
+  var shown = Math.min(p.hand.length, 8);
+  for (var i = 0; i < shown; i++) {
+    var b = backEl('tiny');
+    b.style.transform = 'rotate(' + ((i - (shown - 1) / 2) * 6) + 'deg)';
+    handFan.appendChild(b);
+  }
+  var statRow = el('div', { class: 'opp-stats' }, [
+    handFan,
+    el('span', { class: 'opp-handn', text: String(p.hand.length) }),
+    el('span', { class: 'opp-bank', text: bankValue(p) + 'M' })
+  ]);
+  panel.appendChild(statRow);
+
+  // played cards: real mini faces, grouped by set
+  var table = el('div', { class: 'opp-table' });
+  if (p.bank.length) {
+    var bf = bankFan(p, 'mini');
+    bf.className += ' opp-bankfan';
+    table.appendChild(bf);
+  }
+  p.sets.forEach(function (z) { table.appendChild(zoneEl(z, 'mini', null)); });
+  if (!p.sets.length && !p.bank.length) {
+    table.appendChild(el('div', { class: 'opp-empty', text: 'nothing played yet' }));
+  }
+  panel.appendChild(table);
+
+  panel.addEventListener('click', function () { onTap(idx); });
   return panel;
 }
 
-// handlers: { onHandCard(card), onTableCard(card, zone), onEndTurn() }
+/* ── center: deck + banner + messy discard ───────────────────────── */
+
+function deckPile(state) {
+  var stack = el('div', { class: 'deck-stack', id: 'deck-stack' });
+  for (var i = 3; i >= 1; i--) {
+    var under = backEl('deck-big under');
+    under.style.transform = 'translate(' + (i * 2) + 'px,' + (i * 2) + 'px)';
+    stack.appendChild(under);
+  }
+  stack.appendChild(backEl('deck-big'));
+  stack.appendChild(el('span', { class: 'deck-count', text: String(state.deck.length) }));
+  return el('div', { class: 'pile' }, [stack, el('span', { class: 'pile-label', text: 'DRAW' })]);
+}
+
+function discardPile(state) {
+  var stack = el('div', { class: 'discard-stack', id: 'discard-stack' });
+  var top = state.discard.slice(-5);
+  if (!top.length) {
+    stack.appendChild(el('div', { class: 'card small empty-pile' }));
+  }
+  top.forEach(function (c) {
+    var cv = cardEl(c, 'small messy');
+    cv.style.transform = 'translate(' + jitter(c.id, 7) + 'px,' + jitter(c.id + 'y', 5) + 'px) rotate(' + jitter(c.id + 'r', 11) + 'deg)';
+    stack.appendChild(cv);
+  });
+  return el('div', { class: 'pile' }, [stack, el('span', { class: 'pile-label', text: 'DISCARD' })]);
+}
+
+/* ── the render ──────────────────────────────────────────────────── */
+
+// handlers: { onHandCard, onTableCard, onEndTurn, onOpponent }
 export function render(state, handlers) {
   var humanIdx = 0;
   var me = state.players[humanIdx];
   var myTurn = state.active === humanIdx && state.phase === 'main' && !state.pending && state.winner === null;
 
-  // opponents
+  // opponent seats around the top arc
   var opps = clear(qs('#opponents'));
+  opps.className = 'seats-' + (state.players.length - 1);
   for (var i = 1; i < state.players.length; i++) {
-    opps.appendChild(opponentPanel(state, i));
+    opps.appendChild(opponentPanel(state, i, handlers.onOpponent));
   }
 
-  // midbar
-  var mid = clear(qs('#midbar'));
-  mid.appendChild(el('div', { class: 'pile' }, [
-    backEl('deck-back'),
-    el('span', { class: 'pile-label', text: String(state.deck.length) })
-  ]));
+  // center of the table
+  var center = clear(qs('#center'));
+  center.appendChild(deckPile(state));
+
   var banner = el('div', { class: 'banner' });
   if (state.winner !== null) {
     banner.appendChild(el('div', { class: 'banner-turn', text: state.players[state.winner].name + ' wins!' }));
-  } else if (myTurn) {
-    banner.appendChild(el('div', { class: 'banner-turn you', text: 'Your turn' }));
+  } else {
+    var activeName = state.active === 0 ? 'Your turn' : state.players[state.active].name + '’s turn';
+    banner.appendChild(el('div', { class: 'banner-turn' + (state.active === 0 ? ' you' : ''), text: activeName }));
     var pips = el('div', { class: 'pips' });
     for (var pp = 0; pp < 3; pp++) {
       pips.appendChild(el('span', { class: 'pip' + (pp < state.playsLeft ? ' on' : '') }));
     }
     banner.appendChild(pips);
-  } else {
-    banner.appendChild(el('div', { class: 'banner-turn', text: state.players[state.active].name + '’s turn' }));
   }
   var lastLog = '';
   for (var li = state.log.length - 1; li >= 0; li--) {
     if (state.log[li].indexOf('— ') !== 0) { lastLog = state.log[li]; break; }
   }
   banner.appendChild(el('div', { class: 'ticker', text: lastLog }));
-  mid.appendChild(banner);
+  center.appendChild(banner);
 
-  var discardPile = el('div', { class: 'pile' });
-  if (state.discard.length) {
-    discardPile.appendChild(cardEl(state.discard[state.discard.length - 1], 'small discard-top'));
-  } else {
-    discardPile.appendChild(el('div', { class: 'card small empty-pile' }));
-  }
-  discardPile.appendChild(el('span', { class: 'pile-label', text: 'discard' }));
-  mid.appendChild(discardPile);
+  center.appendChild(discardPile(state));
 
-  // my table
+  // my table: zones as small full-art cards + bank fan
   var setsRow = clear(qs('#my-sets'));
   if (!me.sets.length) {
     setsRow.appendChild(el('div', { class: 'empty-hint', text: 'Your properties will appear here' }));
   }
   me.sets.forEach(function (z) {
-    var chip = zoneChip(z, null);
-    var zoneCards = el('div', { class: 'zone-cards' });
-    z.cards.forEach(function (c) {
-      var cv = cardEl(c, 'mini');
-      if (myTurn) {
-        cv.addEventListener('click', function () { handlers.onTableCard(c, z); });
-      }
-      zoneCards.appendChild(cv);
-    });
-    if (z.house) {
-      var hv = cardEl(z.house, 'mini');
-      if (myTurn) hv.addEventListener('click', function () { handlers.onTableCard(z.house, z); });
-      zoneCards.appendChild(hv);
-    }
-    if (z.hotel) {
-      var hov = cardEl(z.hotel, 'mini');
-      if (myTurn) hov.addEventListener('click', function () { handlers.onTableCard(z.hotel, z); });
-      zoneCards.appendChild(hov);
-    }
-    var wrap = el('div', { class: 'zone' + (isZoneComplete(z) ? ' done' : '') }, [
-      zoneCards,
-      el('div', { class: 'zone-label', text: COLORS[z.color].label + ' ' + z.cards.length + '/' + COLORS[z.color].size + (isZoneComplete(z) ? ' ★' : '') })
-    ]);
-    setsRow.appendChild(wrap);
+    setsRow.appendChild(zoneEl(z, 'small', myTurn ? handlers.onTableCard : null));
   });
 
-  // my bank
   var bankRow = clear(qs('#my-bank'));
   bankRow.appendChild(el('span', { class: 'bank-label', text: 'Bank ' + bankValue(me) + 'M' }));
-  var bankChips = el('span', { class: 'bank-chips' });
-  me.bank.forEach(function (c) {
-    bankChips.appendChild(el('span', { class: 'bank-chip', text: c.value }));
-  });
-  bankRow.appendChild(bankChips);
+  if (me.bank.length) {
+    var bf = bankFan(me, 'mini');
+    bankRow.appendChild(bf);
+  }
 
   // hand
   var hand = clear(qs('#hand'));
@@ -146,7 +190,7 @@ export function render(state, handlers) {
   var controls = clear(qs('#controls'));
   if (myTurn) {
     controls.appendChild(el('button', {
-      class: 'btn btn-primary btn-end', text: state.playsLeft > 0 ? 'End turn' : 'End turn (no plays left)',
+      class: 'btn btn-primary btn-end', text: 'End turn',
       onTap: handlers.onEndTurn
     }));
   }
