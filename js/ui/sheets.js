@@ -647,11 +647,11 @@ export function showOpponentSheet(state, idx) {
 
 /* ── game over ───────────────────────────────────────────────────── */
 
-export function showGameOverSheet(state, onNew, onHome) {
+export function showGameOverSheet(state, recordLine, onNew, onHome) {
   var winner = state.players[state.winner];
   showSheet({
     title: winner.id === 0 ? '🏆 You win!' : winner.name + ' wins',
-    sub: 'First to three complete sets in different colours.',
+    sub: recordLine || 'First to three complete sets in different colours.',
     noCancel: true,
     buttons: [
       { label: 'Play again', cls: 'btn-primary', onTap: onNew },

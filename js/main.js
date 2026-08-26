@@ -10,6 +10,11 @@ import {
   showRearrangeSheet, showGameOverSheet, showOpponentSheet, showSheet, closeSheet
 } from './ui/sheets.js';
 import { animateEvents } from './ui/fx.js';
+import {
+  DIFF_KEYS, getActive, listProfiles, setActive, createProfile, deleteProfile,
+  recordResult, exportActive, importProfile, recordSummary
+} from './profile.js';
+import { PERSONALITIES } from './ai/bot.js';
 import { RULES_HTML } from './ui/rules.js';
 
 var SAVE_KEY = 'magnate-save-v1';
@@ -77,9 +82,36 @@ function goHome() {
   showScreen('screen-home');
 }
 
+function diffLabel(key) {
+  return PERSONALITIES[key] ? PERSONALITIES[key].label : key;
+}
+
+function recordLineFor(profile, diff) {
+  var r = (profile.records && profile.records[diff]) || { w: 0, l: 0 };
+  return r.w + 'W – ' + r.l + 'L';
+}
+
+function profileCard() {
+  var prof = getActive();
+  var sum = recordSummary(prof);
+  var card = el('div', { class: 'profile-card' });
+  card.appendChild(el('div', { class: 'profile-name', text: prof.name }));
+  var recs = DIFF_KEYS.map(function (d) {
+    return diffLabel(d) + ' ' + recordLineFor(prof, d);
+  }).join('   ·   ');
+  card.appendChild(el('div', { class: 'profile-recs', text: sum.games ? recs : 'No games recorded yet' }));
+  card.appendChild(el('button', {
+    class: 'btn btn-ghost profile-btn', text: 'Players & records ▸',
+    onTap: showUsersSheet
+  }));
+  return card;
+}
+
 function buildHome() {
   var saved = loadSave();
   var box = clear(qs('#home-menu'));
+
+  box.appendChild(profileCard());
 
   if (saved) {
     box.appendChild(el('button', {
@@ -134,6 +166,157 @@ function buildHome() {
 function showRules() {
   qs('#rules-body').innerHTML = RULES_HTML;
   showScreen('screen-rules');
+}
+
+/* ── player profiles & records ───────────────────────────────────── */
+
+function showUsersSheet() {
+  var active = getActive();
+  var content = el('div', {});
+
+  // active player's record table
+  content.appendChild(el('div', { class: 'group-label', text: 'Record — ' + active.name }));
+  var table = el('div', { class: 'record-table' });
+  DIFF_KEYS.forEach(function (d) {
+    table.appendChild(el('div', { class: 'record-row' }, [
+      el('span', { class: 'record-diff', text: 'vs ' + diffLabel(d) }),
+      el('span', { class: 'record-wl', text: recordLineFor(active, d) })
+    ]));
+  });
+  content.appendChild(table);
+
+  // other profiles
+  var others = listProfiles().filter(function (p) { return p.name !== active.name; });
+  if (others.length) {
+    content.appendChild(el('div', { class: 'group-label', text: 'Switch player' }));
+    others.forEach(function (p) {
+      var sum = recordSummary(p);
+      var row = el('div', { class: 'profile-row' });
+      row.appendChild(el('button', {
+        class: 'btn btn-row profile-row-btn',
+        onTap: function () { setActive(p.name); buildHome(); showUsersSheet(); }
+      }, [
+        el('span', { class: 'btn-row-name', text: p.name }),
+        el('span', { class: 'btn-row-sub', text: sum.wins + ' wins / ' + sum.games + ' games' })
+      ]));
+      row.appendChild(el('button', {
+        class: 'btn btn-ghost profile-del', text: '✕',
+        onTap: function () {
+          showSheet({
+            title: 'Delete ' + p.name + '?',
+            sub: 'Their record is gone unless you exported it.',
+            buttons: [
+              { label: 'Delete', cls: 'btn-secondary', onTap: function () { deleteProfile(p.name); buildHome(); showUsersSheet(); } },
+              { label: 'Keep', cls: 'btn-primary', onTap: showUsersSheet }
+            ],
+            noCancel: true
+          });
+        }
+      }));
+      content.appendChild(row);
+    });
+  }
+
+  // new profile
+  content.appendChild(el('div', { class: 'group-label', text: 'New player' }));
+  var nameInput = el('input', { class: 'text-input', type: 'text', maxlength: '24', placeholder: 'Name' });
+  var newRow = el('div', { class: 'profile-row' }, [
+    nameInput,
+    el('button', {
+      class: 'btn btn-secondary', text: 'Create',
+      onTap: function () {
+        var res = createProfile(nameInput.value);
+        if (!res.ok) { showToast(res.error); return; }
+        buildHome();
+        showUsersSheet();
+      }
+    })
+  ]);
+  content.appendChild(newRow);
+
+  showSheet({
+    title: 'Players & records',
+    content: content,
+    buttons: [
+      { label: 'Save record to a file…', cls: 'btn-secondary', onTap: showExportSheet },
+      { label: 'Restore record from a file…', cls: 'btn-secondary', onTap: showImportSheet }
+    ],
+    cancelLabel: 'Done'
+  });
+}
+
+function showExportSheet() {
+  var prof = getActive();
+  var json = exportActive();
+  var content = el('div', {});
+  var canDownload = 'download' in document.createElement('a');
+
+  content.appendChild(el('div', {
+    class: 'sheet-hint',
+    text: canDownload
+      ? 'Download the file, or copy the text below — either restores this record later.'
+      : 'This iPad’s Safari can’t save files directly: tap the text below (it selects itself), Copy, and paste it somewhere safe — Notes, an email to yourself, or a file in the Files app. Restoring accepts the pasted text or the file.'
+  }));
+  var ta = el('textarea', { class: 'text-area', readonly: 'readonly' });
+  ta.value = json;
+  ta.addEventListener('click', function () { ta.select(); });
+  content.appendChild(ta);
+
+  var buttons = [];
+  if (canDownload) {
+    buttons.push({
+      label: 'Download magnate-record-' + prof.name + '.json',
+      cls: 'btn-primary',
+      onTap: function () {
+        try {
+          var blob = new Blob([json], { type: 'application/json' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'magnate-record-' + prof.name + '.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+        } catch (e) { showToast('Could not create the file — copy the text instead.'); }
+      }
+    });
+  }
+  showSheet({ title: 'Save ' + prof.name + '’s record', content: content, buttons: buttons, cancelLabel: 'Done', onCancel: showUsersSheet });
+}
+
+function showImportSheet() {
+  var content = el('div', {});
+  content.appendChild(el('div', { class: 'sheet-hint', text: 'Choose a saved record file, or paste the record text:' }));
+
+  var file = el('input', { class: 'file-input', type: 'file', accept: '.json,.txt,application/json,text/plain' });
+  var ta = el('textarea', { class: 'text-area', placeholder: '…or paste the record text here' });
+  file.addEventListener('change', function () {
+    if (!file.files || !file.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function () { ta.value = String(reader.result || ''); };
+    reader.readAsText(file.files[0]);
+  });
+  content.appendChild(file);
+  content.appendChild(ta);
+
+  showSheet({
+    title: 'Restore a record',
+    sub: 'A record of the same player name is replaced.',
+    content: content,
+    buttons: [{
+      label: 'Restore', cls: 'btn-primary',
+      onTap: function () {
+        var res = importProfile(ta.value);
+        if (!res.ok) { showToast(res.error); return; }
+        showToast('Restored ' + res.name + '’s record.');
+        buildHome();
+        showUsersSheet();
+      }
+    }],
+    cancelLabel: 'Back',
+    onCancel: showUsersSheet
+  });
 }
 
 /* ── game lifecycle ──────────────────────────────────────────────── */
@@ -193,7 +376,14 @@ function loop() {
 
   if (state.winner !== null) {
     stopBots();
-    showGameOverSheet(state,
+    var diff = state.players[1] ? state.players[1].personality : 'balanced';
+    if (!state.resultRecorded) {
+      state.resultRecorded = true;
+      recordResult(diff, state.winner === 0);
+    }
+    var prof = getActive();
+    var line = prof.name + ' vs ' + diffLabel(diff) + ': ' + recordLineFor(prof, diff);
+    showGameOverSheet(state, line,
       function () { closeSheet(); goHomeNew(); },
       function () { closeSheet(); goHome(); });
     return;

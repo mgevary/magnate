@@ -100,6 +100,51 @@ button { font-family: inherit; }
 #home-menu .seg { text-align: left; }
 .home-foot { margin-top: 34px; font-size: 12px; opacity: .5; }
 
+/* profile card + records */
+.profile-card {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 12px;
+  padding: 12px 14px 6px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+.profile-name { font-size: 18px; font-weight: 800; }
+.profile-recs { font-size: 12.5px; opacity: .8; margin: 4px 0 2px; white-space: pre-wrap; }
+.profile-btn { padding: 8px 0; font-size: 14px; color: #e8c53a; }
+.record-table { margin: 2px 0 6px; }
+.record-row {
+  display: flex; justify-content: space-between;
+  border-bottom: 1px dotted rgba(255,255,255,.2);
+  padding: 6px 2px;
+  font-size: 15px;
+}
+.record-diff { opacity: .85; }
+.record-wl { font-weight: 800; color: #e8c53a; }
+.profile-row { display: flex; align-items: center; margin: 4px 0; }
+.profile-row .btn-row { flex: 1; margin: 0; }
+.profile-del { padding: 10px 12px; font-size: 16px; flex-shrink: 0; }
+.text-input, .text-area, .file-input {
+  -webkit-user-select: text;
+  user-select: text;
+  font-family: inherit;
+  color: #f2efe6;
+  background: rgba(0,0,0,.3);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 9px;
+  padding: 10px;
+  font-size: 16px;
+}
+.text-input { flex: 1; margin-right: 8px; min-width: 0; }
+.text-area {
+  display: block; width: 100%;
+  min-height: 120px;
+  margin: 8px 0;
+  font-size: 11px;
+  font-family: Menlo, monospace;
+}
+.file-input { display: block; width: 100%; margin: 4px 0; font-size: 14px; }
+
 /* ── game screen frame ─────────────────────────────────────────── */
 #screen-game { height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 
