@@ -1,11 +1,14 @@
-// cardview.js — code-drawn card faces (no image assets).
-// Cards are DOM + inline SVG; colours come from engine metadata.
+// cardview.js — card faces styled after classic printed trading-game
+// cards: white stock, thin black inner frame, value circles in opposite
+// corners, colour band floating in the white margin, icon-based rent
+// ladders, italic rule text and a small wordmark. All original assets;
+// AI vignettes layer over code-drawn fallbacks.
 
 import { COLORS, COLOR_KEYS, ACTIONS } from '../engine/cards.js';
 import { el } from './dom.js';
 
 var MONEY_TINTS = {
-  1: '#8a9199', 2: '#c98ea8', 3: '#4fa08a', 4: '#8f7fc0', 5: '#d08a4e', 10: '#c9a13b'
+  1: '#b9a26a', 2: '#c98ea8', 3: '#4fa08a', 4: '#8f7fc0', 5: '#d08a4e', 10: '#c9a13b'
 };
 
 function svg(markup) {
@@ -28,9 +31,8 @@ var ICONS = {
   doubleRent: ''
 };
 
-// Illustration layer: AI-generated vignette JPEGs (art/) sit on top of
-// the code-drawn SVG; if an image is missing or fails to load it hides
-// itself and the SVG fallback stays visible.
+// Illustration layer: AI-generated vignette JPEGs sit over the SVG
+// fallback; a failed load hides itself and the fallback stays.
 function artImg(name) {
   var img = document.createElement('img');
   img.className = 'art-img';
@@ -47,9 +49,6 @@ function skylineSvg(ink) {
     '<rect x="30" y="20" width="14" height="14"/><rect x="46" y="12" width="9" height="22"/>' +
     '<rect x="57" y="4" width="12" height="30"/><rect x="71" y="18" width="10" height="16"/>' +
     '<rect x="83" y="10" width="12" height="24"/>' +
-    '<rect x="20" y="11" width="2" height="2" fill="#fff" opacity=".8"/><rect x="24" y="11" width="2" height="2" fill="#fff" opacity=".8"/>' +
-    '<rect x="59" y="8" width="2" height="2" fill="#fff" opacity=".8"/><rect x="63" y="8" width="2" height="2" fill="#fff" opacity=".8"/>' +
-    '<rect x="59" y="13" width="2" height="2" fill="#fff" opacity=".8"/><rect x="85" y="14" width="2" height="2" fill="#fff" opacity=".8"/>' +
     '</g></svg>';
 }
 
@@ -61,15 +60,31 @@ function rainbowGradient() {
   return 'linear-gradient(90deg,' + parts.join(',') + ')';
 }
 
-function valueBadge(card) {
-  return el('span', { class: 'val-badge', text: card.value + 'M' });
+// Classic corner value circles: top-left plus an upside-down twin at
+// bottom-right, like a printed card read from either side of the table.
+function appendBadges(root, card) {
+  var zero = card.value === 0;
+  root.appendChild(el('span', { class: 'vc vc-tl' + (zero ? ' vc-zero' : ''), text: zero ? '0' : card.value + 'M' }));
+  root.appendChild(el('span', { class: 'vc vc-br' + (zero ? ' vc-zero' : ''), text: zero ? '0' : card.value + 'M' }));
 }
 
+function brand() {
+  return el('div', { class: 'card-brand', text: 'M A G N A T E' });
+}
+
+// Rent ladder with card-count icons: "▮▮  ····  2M" per row.
 function rentLadder(color) {
   var meta = COLORS[color];
   var rows = meta.rent.map(function (m, i) {
+    var icons = el('span', { class: 'rrow-icons' });
+    for (var k = 0; k <= i; k++) {
+      var ic = el('span', { class: 'rcard' });
+      ic.style.background = meta.hex;
+      icons.appendChild(ic);
+    }
     return el('div', { class: 'rrow' }, [
-      el('span', { class: 'rrow-n', text: String(i + 1) }),
+      icons,
+      el('span', { class: 'rrow-leader' }),
       el('span', { class: 'rrow-m', text: m + 'M' })
     ]);
   });
@@ -82,11 +97,14 @@ export function cardEl(card, cls) {
   if (card.kind === 'money') {
     root.className += ' c-money';
     root.style.setProperty('--tint', MONEY_TINTS[card.value] || '#999');
+    ['tl', 'tr', 'bl', 'br'].forEach(function (pos) {
+      root.appendChild(el('span', { class: 'money-corner mc-' + pos, text: card.value + 'M' }));
+    });
     root.appendChild(el('div', { class: 'money-oval' }, [
       el('span', { class: 'money-val', text: String(card.value) }),
       el('span', { class: 'money-m', text: 'M' })
     ]));
-    root.appendChild(el('div', { class: 'money-word', text: 'MONEY' }));
+    root.appendChild(el('div', { class: 'money-word', text: 'MAGNATE BANK NOTE' }));
     return root;
   }
 
@@ -101,83 +119,81 @@ export function cardEl(card, cls) {
     art.appendChild(artImg('color-' + card.color));
     root.appendChild(art);
     root.appendChild(rentLadder(card.color));
-    root.appendChild(el('div', { class: 'prop-color-label', text: meta.label }));
-    root.appendChild(valueBadge(card));
+    root.appendChild(brand());
+    appendBadges(root, card);
     return root;
   }
 
   if (card.kind === 'wild') {
     root.className += ' c-wild';
     if (card.colors === 'all') {
-      var band = el('div', { class: 'prop-band wild-band', text: 'WILD — ANY COLOUR' });
+      var band = el('div', { class: 'prop-band wild-band', text: 'WILD' });
       band.style.background = rainbowGradient();
       band.style.color = '#fff';
       band.style.textShadow = '0 1px 2px rgba(0,0,0,.6)';
       root.appendChild(band);
       root.appendChild(el('div', { class: 'wild-body' }, [
-        el('div', { class: 'wild-big', text: 'WILD' }),
-        el('div', { class: 'wild-note', text: 'Counts as any colour. No cash value — never used to pay. Cannot complete a set alone.' })
+        el('div', { class: 'wild-big', text: 'ANY COLOUR' }),
+        el('div', { class: 'wild-note', text: 'Counts as a property of any colour. No cash value — never used to pay. Cannot complete a set alone.' })
       ]));
-      root.appendChild(el('span', { class: 'val-badge val-zero', text: '0' }));
+      var band2b = el('div', { class: 'prop-band wild-band wild-band-btm', text: '' });
+      band2b.style.background = rainbowGradient();
+      root.appendChild(band2b);
+      root.appendChild(brand());
+      appendBadges(root, card);
       return root;
     }
     var a = COLORS[card.colors[0]], b = COLORS[card.colors[1]];
-    var band2 = el('div', { class: 'prop-band wild-band', text: 'WILD' });
-    band2.style.background = 'linear-gradient(90deg,' + a.hex + ' 0%,' + a.hex + ' 50%,' + b.hex + ' 50%,' + b.hex + ' 100%)';
-    band2.style.color = '#fff';
-    band2.style.textShadow = '0 1px 2px rgba(0,0,0,.5)';
-    root.appendChild(band2);
+    var bandTop = el('div', { class: 'prop-band wild-band', text: 'WILD' });
+    bandTop.style.background = a.hex;
+    bandTop.style.color = a.ink;
+    root.appendChild(bandTop);
     root.appendChild(el('div', { class: 'wild-two' }, [
-      el('div', { class: 'wild-half', style: 'border-color:' + a.hex }, [
+      el('div', { class: 'wild-half' }, [
         el('div', { class: 'wild-half-name', text: a.label, style: 'color:' + a.hex }),
         rentLadder(card.colors[0])
       ]),
-      el('div', { class: 'wild-half', style: 'border-color:' + b.hex }, [
+      el('div', { class: 'wild-half' }, [
         el('div', { class: 'wild-half-name', text: b.label, style: 'color:' + b.hex }),
         rentLadder(card.colors[1])
       ])
     ]));
-    root.appendChild(valueBadge(card));
+    var bandBtm = el('div', { class: 'prop-band wild-band wild-band-btm', text: 'WILD' });
+    bandBtm.style.background = b.hex;
+    bandBtm.style.color = b.ink;
+    root.appendChild(bandBtm);
+    appendBadges(root, card);
     return root;
   }
 
   if (card.kind === 'rent') {
     root.className += ' c-rent';
-    var rband = el('div', { class: 'prop-band', text: 'RENT, PLEASE' });
-    if (card.colors === 'all') {
-      rband.style.background = rainbowGradient();
-      rband.style.color = '#fff';
-      rband.style.textShadow = '0 1px 2px rgba(0,0,0,.6)';
-    } else {
-      var ca = COLORS[card.colors[0]], cb = COLORS[card.colors[1]];
-      rband.style.background = 'linear-gradient(90deg,' + ca.hex + ' 0%,' + ca.hex + ' 50%,' + cb.hex + ' 50%,' + cb.hex + ' 100%)';
-      rband.style.color = '#fff';
-      rband.style.textShadow = '0 1px 2px rgba(0,0,0,.5)';
-    }
-    root.appendChild(rband);
+    root.appendChild(el('div', { class: 'rent-title', text: 'RENT, PLEASE' }));
     var circle = el('div', { class: 'rent-circle' });
     if (card.colors === 'all') {
       circle.style.background = rainbowGradient();
       circle.appendChild(el('span', { text: 'ANY' }));
     } else {
-      circle.style.background = 'linear-gradient(135deg,' + COLORS[card.colors[0]].hex + ' 0%,' + COLORS[card.colors[0]].hex + ' 50%,' + COLORS[card.colors[1]].hex + ' 50%,' + COLORS[card.colors[1]].hex + ' 100%)';
+      var ca = COLORS[card.colors[0]], cb = COLORS[card.colors[1]];
+      circle.style.background = 'linear-gradient(135deg,' + ca.hex + ' 0%,' + ca.hex + ' 50%,' + cb.hex + ' 50%,' + cb.hex + ' 100%)';
     }
     root.appendChild(el('div', { class: 'rent-mid' }, [circle]));
     root.appendChild(el('div', {
       class: 'act-text',
       text: card.colors === 'all'
-        ? 'Charge ONE player rent for one of your colours.'
-        : 'ALL players pay you rent for your ' + COLORS[card.colors[0]].label + ' or ' + COLORS[card.colors[1]].label + ' properties.'
+        ? 'Force ONE player to pay you rent for any colour you own.'
+        : 'All players pay you rent for your ' + COLORS[card.colors[0]].label + ' or ' + COLORS[card.colors[1]].label + ' properties.'
     }));
-    root.appendChild(valueBadge(card));
+    root.appendChild(brand());
+    appendBadges(root, card);
     return root;
   }
 
   // action card
   var info = ACTIONS[card.action];
   root.className += ' c-action a-' + card.action;
-  root.appendChild(el('div', { class: 'act-band', text: 'ACTION' }));
   root.appendChild(el('div', { class: 'act-name', text: info.name }));
+  root.appendChild(el('div', { class: 'act-rule' }));
   var iconBox = el('div', { class: 'act-icon' });
   if (card.action === 'doubleRent') {
     iconBox.appendChild(el('span', { class: 'x2', text: '×2' }));
@@ -187,7 +203,8 @@ export function cardEl(card, cls) {
   iconBox.appendChild(artImg('action-' + card.action));
   root.appendChild(iconBox);
   root.appendChild(el('div', { class: 'act-text', text: info.text }));
-  root.appendChild(valueBadge(card));
+  root.appendChild(brand());
+  appendBadges(root, card);
   return root;
 }
 
@@ -197,7 +214,7 @@ export function backEl(cls) {
   ]);
 }
 
-// Small chip for table zones and pickers.
+// Small chip used by seat summaries.
 export function chipEl(card) {
   var chip = el('span', { class: 'chip', 'data-card-id': card.id });
   if (card.kind === 'property') {
