@@ -28,6 +28,18 @@ var ICONS = {
   doubleRent: ''
 };
 
+// Illustration layer: AI-generated vignette JPEGs (art/) sit on top of
+// the code-drawn SVG; if an image is missing or fails to load it hides
+// itself and the SVG fallback stays visible.
+function artImg(name) {
+  var img = document.createElement('img');
+  img.className = 'art-img';
+  img.alt = '';
+  img.onerror = function () { img.style.display = 'none'; };
+  img.src = 'art/' + name + '.jpg';
+  return img;
+}
+
 function skylineSvg(ink) {
   return '<svg viewBox="0 0 100 34" class="skyline" preserveAspectRatio="none" aria-hidden="true">' +
     '<g fill="' + ink + '" opacity=".85">' +
@@ -86,6 +98,7 @@ export function cardEl(card, cls) {
     root.appendChild(el('div', { class: 'prop-band', text: card.name }));
     var art = el('div', { class: 'prop-art' });
     art.innerHTML = skylineSvg(meta.hex);
+    art.appendChild(artImg('color-' + card.color));
     root.appendChild(art);
     root.appendChild(rentLadder(card.color));
     root.appendChild(el('div', { class: 'prop-color-label', text: meta.label }));
@@ -171,6 +184,7 @@ export function cardEl(card, cls) {
   } else {
     iconBox.appendChild(svg(ICONS[card.action]));
   }
+  iconBox.appendChild(artImg('action-' + card.action));
   root.appendChild(iconBox);
   root.appendChild(el('div', { class: 'act-text', text: info.text }));
   root.appendChild(valueBadge(card));

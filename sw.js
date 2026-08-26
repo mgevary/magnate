@@ -4,7 +4,7 @@
 // hash; a new deploy installs a fresh cache and retires the old one.
 // ES2017-safe for the Safari 12 worker context.
 
-var VERSION = 'eccc4f4';
+var VERSION = '74b9284';
 var CACHE = 'magnate-' + VERSION;
 
 var ASSETS = [
@@ -24,7 +24,28 @@ var ASSETS = [
   'js/ui/fx.js',
   'icons/apple-touch-icon.png',
   'icons/apple-touch-icon-152.png',
-  'icons/favicon-32.png'
+  'icons/favicon-32.png',
+  'art/color-brown.jpg',
+  'art/color-lightblue.jpg',
+  'art/color-magenta.jpg',
+  'art/color-orange.jpg',
+  'art/color-red.jpg',
+  'art/color-yellow.jpg',
+  'art/color-green.jpg',
+  'art/color-darkblue.jpg',
+  'art/color-railroad.jpg',
+  'art/color-utility.jpg',
+  'art/action-dealBreaker.jpg',
+  'art/action-justSayNo.jpg',
+  'art/action-passGo.jpg',
+  'art/action-forcedDeal.jpg',
+  'art/action-slyDeal.jpg',
+  'art/action-debtCollector.jpg',
+  'art/action-birthday.jpg',
+  'art/action-house.jpg',
+  'art/action-hotel.jpg',
+  'art/action-doubleRent.jpg',
+  'art/card-back.jpg'
 ];
 
 self.addEventListener('install', function (event) {

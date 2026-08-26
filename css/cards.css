@@ -49,9 +49,17 @@
 .card.mini .prop-band { font-size: 6px; padding: 4px 3px 2px 15px; min-height: 18px; letter-spacing: 0; }
 .card.small .prop-band { font-size: 7px; padding: 5px 19px 3px; min-height: 26px; }
 
-.prop-art { flex: 1; display: flex; align-items: flex-end; background: linear-gradient(#fdfbf4, #efe9d8); }
+.prop-art { flex: 1; display: flex; align-items: flex-end; background: linear-gradient(#fdfbf4, #efe9d8); position: relative; overflow: hidden; }
 .skyline { width: 100%; height: 78%; display: block; }
 .card.mini .prop-art { display: none; }
+.art-img {
+  position: absolute;
+  left: 0; top: 0; width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.act-icon { position: relative; overflow: hidden; }
+.act-icon .art-img { object-fit: cover; }
 
 .rent-ladder { padding: 3px 8px 4px; background: #f7f3e8; }
 .rrow {
@@ -206,11 +214,17 @@
 
 /* ── card back ────────────────────────────────────────────────── */
 .c-back {
-  background: #35513f;
-  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 6px, transparent 6px, transparent 12px);
+  background-color: #35513f;
+  /* AI card-back art with the stripe pattern as fallback beneath */
+  background-image: url(../art/card-back.jpg), repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 6px, transparent 6px, transparent 12px);
+  background-size: cover, auto;
+  background-position: center center;
   align-items: center;
   justify-content: center;
   border: 4px solid #f7f3e8;
+}
+.c-back.tiny {
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0px, rgba(255,255,255,.05) 6px, transparent 6px, transparent 12px);
 }
 .deck-back { width: 58px; height: 81px; }
 .card.tiny { width: 22px; height: 31px; border-radius: 3px; }
