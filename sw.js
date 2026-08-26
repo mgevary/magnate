@@ -4,7 +4,7 @@
 // hash; a new deploy installs a fresh cache and retires the old one.
 // ES2017-safe for the Safari 12 worker context.
 
-var VERSION = 'b318c4d';
+var VERSION = '25b5991';
 var CACHE = 'magnate-' + VERSION;
 
 var ASSETS = [
@@ -22,6 +22,8 @@ var ASSETS = [
   'js/ui/sheets.js',
   'js/ui/rules.js',
   'js/ui/fx.js',
+  'js/net.js',
+  'js/vendor/qrcode.js',
   'icons/apple-touch-icon.png',
   'icons/apple-touch-icon-152.png',
   'icons/favicon-32.png',

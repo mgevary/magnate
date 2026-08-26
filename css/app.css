@@ -403,6 +403,17 @@ button { font-family: inherit; }
 
 .dtr-row { margin-bottom: 4px; }
 
+/* WiFi rooms */
+.room-code {
+  font-size: 40px; font-weight: 900; letter-spacing: 10px;
+  text-align: center; color: #e8c53a; margin: 2px 0 4px;
+}
+.qr-box {
+  background: #fff; border-radius: 12px; padding: 8px;
+  width: 190px; margin: 6px auto;
+}
+.qr-box svg { display: block; width: 100%; height: auto; }
+
 /* ── toast ─────────────────────────────────────────────────────── */
 #toast {
   position: fixed;

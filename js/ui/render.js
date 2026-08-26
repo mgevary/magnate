@@ -99,7 +99,8 @@ function deckPile(state) {
     stack.appendChild(under);
   }
   stack.appendChild(backEl('deck-big'));
-  stack.appendChild(el('span', { class: 'deck-count', text: String(state.deck.length) }));
+  var count = typeof state.deckCount === 'number' ? state.deckCount : state.deck.length;
+  stack.appendChild(el('span', { class: 'deck-count', text: String(count) }));
   return el('div', { class: 'pile' }, [stack, el('span', { class: 'pile-label', text: 'DRAW' })]);
 }
 

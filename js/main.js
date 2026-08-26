@@ -15,12 +15,16 @@ import {
   recordResult, exportActive, importProfile, recordSummary
 } from './profile.js';
 import { PERSONALITIES } from './ai/bot.js';
+import {
+  net, probeLan, connect, createRoom, joinRoom, startGame as netStart,
+  rematch as netRematch, sendAction, refreshRooms, leaveRoom, disconnect
+} from './net.js';
 import { RULES_HTML } from './ui/rules.js';
 
 var SAVE_KEY = 'magnate-save-v1';
 var BOT_DELAY = 850;
 
-var App = { state: null, botTimer: null };
+var App = { state: null, botTimer: null, mode: 'solo' };
 
 // Debug/testing hook (also handy over Web Inspector on the iPad).
 window.MAGNATE = {
@@ -35,6 +39,21 @@ window.MAGNATE = {
     if (!mine) return false;
     var a = botDecide(App.state, 0);
     humanAct(a || { type: 'endTurn' });
+    return true;
+  },
+  // Network testing hooks
+  netOpen: function (code) { openWifi(code || null); },
+  netCreate: function (bots, diff) { createRoom(bots || 0, diff || 'balanced'); },
+  netJoin: function (code) { joinRoom(code); },
+  netStartGame: function () { netStart(); },
+  netInfo: function () { return { room: net.room, rooms: net.rooms, connected: net.connected, mode: App.mode }; },
+  netAuto: function () {
+    if (App.mode !== 'net' || !App.state || App.state.winner !== null) return false;
+    var w = whatsPending(App.state);
+    var mine = w ? w.player === 0 : (App.state.active === 0 && App.state.phase === 'main');
+    if (!mine) return false;
+    var a = botDecide(App.state, 0);
+    netAct(a || { type: 'endTurn' });
     return true;
   }
 };
@@ -158,9 +177,224 @@ function buildHome() {
     onTap: function () { startNew(chosen.opps, chosen.diff); }
   }));
   box.appendChild(el('button', {
+    class: 'btn btn-secondary btn-big', text: 'Play on WiFi (multiplayer)',
+    onTap: function () { openWifi(null); }
+  }));
+  box.appendChild(el('button', {
     class: 'btn btn-secondary btn-big', text: 'How to play',
     onTap: function () { showRules(); }
   }));
+}
+
+/* ── WiFi multiplayer ────────────────────────────────────────────── */
+
+function openWifi(joinCode) {
+  probeLan(function (info) {
+    if (!info) {
+      showSheet({
+        title: 'Play on WiFi',
+        sub: 'This copy isn’t being served by the Magnate WiFi server.',
+        content: el('div', { class: 'sheet-hint', html:
+          'To play multiplayer at home:<br><br>' +
+          '1. On the Mac, run <b>npm run lan</b> in the magnate folder.<br>' +
+          '2. It prints an address like <b>http://192.168.x.x:8330</b>.<br>' +
+          '3. Open that address on every device on the same WiFi.<br><br>' +
+          'The server referees the game — it never plays.' }),
+        buttons: []
+      });
+      return;
+    }
+    connect(getActive().name, function () {
+      wireNetHandlers();
+      if (joinCode) { joinRoom(joinCode); return; } // room sheet appears on server reply
+      showWifiLobby();
+    });
+  });
+}
+
+function wireNetHandlers() {
+  net.onError = function (msg) { showToast(msg); };
+  net.onDrop = function () {
+    if (App.mode === 'net') {
+      showToast('Connection lost — trying to rejoin…');
+      setTimeout(function () {
+        connect(getActive().name, function () { wireNetHandlers(); });
+      }, 1500);
+    }
+  };
+  net.onRoom = function (room) { showRoomSheet(room); };
+  net.onState = function (view) {
+    App.mode = 'net';
+    App.state = view;
+    closeSheet();
+    showScreen('screen-game');
+    netLoop();
+  };
+}
+
+function showWifiLobby() {
+  refreshRooms();
+  var content = el('div', {});
+  var listBox = el('div', {});
+  content.appendChild(el('div', { class: 'group-label', text: 'Open rooms' }));
+  content.appendChild(listBox);
+
+  function renderRooms(roomsArr) {
+    clear(listBox);
+    if (!roomsArr.length) {
+      listBox.appendChild(el('div', { class: 'sheet-hint', text: 'No rooms yet — create one below.' }));
+    }
+    roomsArr.forEach(function (r) {
+      if (r.started) return;
+      listBox.appendChild(el('button', {
+        class: 'btn btn-row', onTap: function () { joinRoom(r.code); }
+      }, [
+        el('span', { class: 'btn-row-name', text: r.code + ' — ' + r.names.join(', ') }),
+        el('span', { class: 'btn-row-sub', text: (r.humans + r.bots) + '/5' })
+      ]));
+    });
+  }
+  renderRooms(net.rooms);
+  net.onRooms = renderRooms;
+
+  var codeInput = el('input', { class: 'text-input', type: 'text', maxlength: '4', placeholder: 'CODE', autocapitalize: 'characters' });
+  content.appendChild(el('div', { class: 'group-label', text: 'Join by code' }));
+  content.appendChild(el('div', { class: 'profile-row' }, [
+    codeInput,
+    el('button', { class: 'btn btn-secondary', text: 'Join', onTap: function () { joinRoom(codeInput.value); } })
+  ]));
+
+  var chosen = { bots: 0, diff: 'balanced' };
+  content.appendChild(el('div', { class: 'group-label', text: 'Create a room — bot seats' }));
+  var segB = el('div', { class: 'seg' });
+  [0, 1, 2, 3].forEach(function (nBots, bi) {
+    segB.appendChild(el('button', {
+      class: 'seg-btn' + (nBots === chosen.bots ? ' on' : ''), text: String(nBots),
+      onTap: function () {
+        chosen.bots = nBots;
+        Array.prototype.forEach.call(segB.children, function (c, i) { c.className = 'seg-btn' + (i === bi ? ' on' : ''); });
+      }
+    }));
+  });
+  content.appendChild(segB);
+  var segD = el('div', { class: 'seg' });
+  [['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']].forEach(function (d, di) {
+    segD.appendChild(el('button', {
+      class: 'seg-btn' + (d[0] === chosen.diff ? ' on' : ''), text: d[1],
+      onTap: function () {
+        chosen.diff = d[0];
+        Array.prototype.forEach.call(segD.children, function (c, i) { c.className = 'seg-btn' + (i === di ? ' on' : ''); });
+      }
+    }));
+  });
+  content.appendChild(segD);
+
+  showSheet({
+    title: 'Play on WiFi',
+    sub: 'Playing as ' + getActive().name,
+    content: content,
+    buttons: [{ label: 'Create room', cls: 'btn-primary', onTap: function () { createRoom(chosen.bots, chosen.diff); } }],
+    onCancel: function () { net.onRooms = null; disconnect(); }
+  });
+}
+
+function showRoomSheet(room) {
+  if (room.started) return; // state message will take over
+  var content = el('div', {});
+
+  content.appendChild(el('div', { class: 'room-code', text: room.code }));
+  content.appendChild(el('div', { class: 'sheet-hint', text: 'Others on this WiFi can scan to join:' }));
+
+  // QR of the join URL (vendored generator; typeNumber 0 = auto)
+  try {
+    var qr = window.qrcode(0, 'M');
+    qr.addData(room.joinUrl);
+    qr.make();
+    var qrBox = el('div', { class: 'qr-box' });
+    qrBox.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2 });
+    content.appendChild(qrBox);
+  } catch (e) { /* QR lib missing — code entry still works */ }
+  content.appendChild(el('div', { class: 'sheet-hint', text: room.joinUrl }));
+
+  content.appendChild(el('div', { class: 'group-label', text: 'Seats' }));
+  room.seats.forEach(function (s, i) {
+    content.appendChild(el('div', { class: 'record-row' }, [
+      el('span', { class: 'record-diff', text: s.name + (s.isBot ? ' (bot)' : '') + (i === room.youSeat ? ' — you' : '') }),
+      el('span', { class: 'record-wl', text: s.isBot ? 'ready' : (s.connected ? 'ready' : 'away') })
+    ]));
+  });
+
+  var buttons = [];
+  if (room.host) {
+    buttons.push({
+      label: room.seats.length >= 2 ? 'Start game' : 'Waiting for players…',
+      cls: 'btn-primary',
+      disabled: room.seats.length < 2,
+      onTap: function () { netStart(); }
+    });
+  } else {
+    content.appendChild(el('div', { class: 'sheet-hint', text: 'Waiting for ' + room.seats[0].name + ' to start the game…' }));
+  }
+  showSheet({
+    title: 'Room ' + room.code,
+    content: content,
+    buttons: buttons,
+    cancelLabel: 'Leave room',
+    onCancel: function () { leaveRoom(); showWifiLobby(); }
+  });
+}
+
+var netHandlers = {
+  onHandCard: function (card) { showPlaySheet(App.state, card, netAct); },
+  onTableCard: function (card, zone) { showRearrangeSheet(App.state, card, zone, netAct); },
+  onEndTurn: function () { netAct({ type: 'endTurn' }); },
+  onOpponent: function (idx) { showOpponentSheet(App.state, idx); }
+};
+
+function netAct(action) {
+  closeSheet();
+  sendAction(action); // server validates; fresh state arrives by message
+}
+
+function netLoop() {
+  var state = App.state;
+  render(state, netHandlers);
+  animateEvents(state);
+
+  var logNow = state.log.length ? state.log[state.log.length - 1] : '';
+  if (logNow && logNow !== App.lastNetLog && logNow.indexOf('— ') !== 0 && logNow.indexOf('You ') !== 0) {
+    showToast(logNow);
+  }
+  App.lastNetLog = logNow;
+
+  if (state.winner !== null) {
+    var winner = state.players[state.winner];
+    var isHost = net.room && net.room.host;
+    showSheet({
+      title: state.winner === 0 ? '🏆 You win!' : winner.name + ' wins',
+      sub: 'WiFi game complete.',
+      noCancel: true,
+      buttons: (isHost ? [{ label: 'Rematch', cls: 'btn-primary', onTap: function () { closeSheet(); netRematch(); } }] : []).concat([
+        { label: 'Leave', cls: 'btn-secondary', onTap: function () { closeSheet(); leaveNetGame(); } }
+      ])
+    });
+    return;
+  }
+
+  var w = whatsPending(state);
+  if (w && w.player === 0) {
+    if (w.type === 'jsn') { showVetoSheet(state, w, netAct); return; }
+    if (w.type === 'pay') { showPaymentSheet(state, w, netAct); return; }
+    if (w.type === 'discard') { showDiscardSheet(state, w, netAct); return; }
+  }
+}
+
+function leaveNetGame() {
+  leaveRoom();
+  disconnect();
+  App.mode = 'solo';
+  App.state = null;
+  goHome();
 }
 
 function showRules() {
@@ -457,16 +691,26 @@ function boot() {
   });
   qs('#game-rules-btn').addEventListener('click', function () { stopBots(); showRules(); });
   qs('#game-home-btn').addEventListener('click', function () {
+    var isNet = App.mode === 'net';
     showSheet({
       title: 'Leave the game?',
-      sub: 'Your game is saved — you can continue later.',
+      sub: isNet ? 'You can rejoin from this device while the room is open.' : 'Your game is saved — you can continue later.',
       buttons: [
-        { label: 'Leave', cls: 'btn-secondary', onTap: function () { closeSheet(); goHome(); } },
-        { label: 'Keep playing', cls: 'btn-primary', onTap: function () { closeSheet(); loop(); } }
+        { label: 'Leave', cls: 'btn-secondary', onTap: function () { closeSheet(); if (isNet) leaveNetGame(); else goHome(); } },
+        { label: 'Keep playing', cls: 'btn-primary', onTap: function () { closeSheet(); if (isNet) netLoop(); else loop(); } }
       ],
       noCancel: true
     });
   });
+
+  // Deep link from a scanned room QR: http://<server>/#join=CODE
+  var m = /join=([A-Za-z]{4})/.exec(window.location.hash || '');
+  if (m) {
+    try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { window.location.hash = ''; }
+    goHome();
+    openWifi(m[1].toUpperCase());
+    return;
+  }
   goHome();
 }
 
