@@ -200,7 +200,7 @@ export function showPlaySheet(state, card, act) {
         content.appendChild(el('div', { class: 'sheet-hint', text: 'A swap needs a property you can give and one you can take (complete sets are protected).' }));
       }
     } else if (kind === 'justSayNo') {
-      content.appendChild(el('div', { class: 'sheet-hint', text: 'Veto is saved in your hand and played automatically as an option when someone attacks you. You can also bank it as 4M.' }));
+      content.appendChild(el('div', { class: 'sheet-hint', text: 'Just Say No Thanks waits in your hand and pops up as an option when someone attacks you. You can also bank it as 4M.' }));
     } else if (kind === 'doubleRent') {
       content.appendChild(el('div', { class: 'sheet-hint', text: 'Play this together with a rent card (you’ll get the option there), or bank it as 1M.' }));
     }
@@ -413,27 +413,27 @@ export function showVetoSheet(state, w, act) {
 
   var what;
   if (pending.action === 'rent') what = srcName + ' charges you ' + claim.amount + 'M rent';
-  else if (pending.action === 'birthday') what = srcName + ' passes the hat — you owe 2M';
-  else if (pending.action === 'debtCollector') what = srcName + ' sends the Debt Collector — you owe 5M';
-  else if (pending.action === 'dealBreaker') what = srcName + ' plays Takeover on your complete set';
-  else if (pending.action === 'slyDeal') what = srcName + ' plays Land Grab on your property';
-  else if (pending.action === 'forcedDeal') what = srcName + ' forces a property swap (Hard Bargain)';
+  else if (pending.action === 'birthday') what = srcName + ' says it’s their birthday (again) — you owe 2M';
+  else if (pending.action === 'debtCollector') what = srcName + ' sends the Grumpy Debt Collector — you owe 5M';
+  else if (pending.action === 'dealBreaker') what = srcName + ' plays a Deal Breakerer on your complete set';
+  else if (pending.action === 'slyDeal') what = srcName + ' plays an Extra Sly Deal on your property';
+  else if (pending.action === 'forcedDeal') what = srcName + ' forces a (polite) property swap';
   else what = srcName + ' plays an action against you';
 
   var title, sub;
   if (iAmVictim) {
     title = what + '!';
-    sub = claim.jsnCount > 0 ? 'Your Veto was countered. Veto again?' : 'You have a Veto card. Cancel it?';
+    sub = claim.jsnCount > 0 ? 'Your No Thanks was countered. Say it again?' : 'You have a Just Say No Thanks card. Cancel it?';
   } else {
-    title = vicName + ' played Veto against you!';
-    sub = 'Counter with your own Veto to push your action through?';
+    title = vicName + ' just said No Thanks to you!';
+    sub = 'Counter with your own Just Say No Thanks to push your action through?';
   }
 
   showSheet({
     title: title, sub: sub, noCancel: true,
     buttons: [
       {
-        label: iAmVictim ? 'Play Veto — cancel it' : 'Counter with Veto', cls: 'btn-primary',
+        label: iAmVictim ? 'Just Say No Thanks — cancel it' : 'Counter — No Thanks to your No Thanks', cls: 'btn-primary',
         onTap: function () { act({ type: 'respondJsn', player: meIdx, use: true }); }
       },
       {

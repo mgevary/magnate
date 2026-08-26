@@ -21,33 +21,33 @@ export var COLORS = {
 
 export var COLOR_KEYS = Object.keys(COLORS);
 
+// Parody street names: the classics, lovingly mangled.
 var STREETS = {
-  brown:     ['Tannery Row', 'Cobble Court'],
-  lightblue: ['Seabreeze Avenue', 'Harborview Walk', 'Lighthouse Lane'],
-  magenta:   ['Orchid Plaza', 'Velvet Parade', 'Rosewater Boulevard'],
-  orange:    ['Foundry Street', 'Clockwork Avenue', 'Marmalade Row'],
-  red:       ['Ember Boulevard', 'Cinder Street', 'Lantern Square'],
-  yellow:    ['Goldenrod Avenue', 'Sunfield Street', 'Amber Heights'],
-  green:     ['Ivygate Gardens', 'Fernbrook Drive', 'Willowmere Park'],
-  darkblue:  ['Regent Crown Way', 'Sapphire Promenade'],
-  railroad:  ['Northline Railway', 'Eastport Railway', 'Southgate Railway', 'Westbridge Railway'],
-  utility:   ['City Waterworks', 'Grand Electric Co.']
+  brown:     ['Muddyterranean Avenue', 'Salty Baltic Avenue'],
+  lightblue: ['Ornamental Avenue', 'Very Vermont Avenue', 'Connecticute Avenue'],
+  magenta:   ['St. Charlie’s Place', 'Fifty States Avenue', 'Virginya Avenue'],
+  orange:    ['St. Jimmy’s Place', 'Tenn-o-see Avenue', 'Nu York Avenue'],
+  red:       ['Unlucky Kentucky Avenue', 'Indyana Avenue', 'Illinoise Avenue'],
+  yellow:    ['Atlantic-ish Avenue', 'Ventnope Avenue', 'Marvelous Gardens'],
+  green:     ['Pacifically Avenue', 'North Caroliner Avenue', 'Pencilvania Avenue'],
+  darkblue:  ['Parking Place', 'Bored Walk'],
+  railroad:  ['Rereading Railroad', 'Pencilvania Railroad', 'B.O. Railroad', 'Very Short Line'],
+  utility:   ['Eclectic Company', 'Water Mostly Works']
 };
 
-// Card mechanics mirror the classic game exactly; the six distinctive
-// card names are original to Magnate (see the in-game rules for the
-// mapping familiar players will want).
+// Card mechanics mirror the classic game exactly; the names are playful
+// near-misses of the classics (see the in-game rules for the mapping).
 export var ACTIONS = {
-  dealBreaker:  { key: 'dealBreaker',  name: 'Takeover',        value: 5, count: 2,  text: 'Steal a complete set from any player, including any House or Hotel on it.' },
-  justSayNo:    { key: 'justSayNo',    name: 'Veto',            value: 4, count: 3,  text: 'Cancel an action card played against you. Can itself be cancelled by another Veto.' },
-  passGo:       { key: 'passGo',       name: 'Windfall',        value: 1, count: 10, text: 'Draw 2 extra cards.' },
-  forcedDeal:   { key: 'forcedDeal',   name: 'Hard Bargain',    value: 3, count: 3,  text: 'Swap one of your properties for one of another player’s. Neither may come from a complete set.' },
-  slyDeal:      { key: 'slyDeal',      name: 'Land Grab',       value: 3, count: 3,  text: 'Steal a property from any player. It may not come from a complete set.' },
-  debtCollector:{ key: 'debtCollector',name: 'Debt Collector',  value: 3, count: 3,  text: 'One player of your choice pays you 5M.' },
-  birthday:     { key: 'birthday',     name: 'Pass the Hat',    value: 2, count: 3,  text: 'Every player pays you 2M.' },
-  house:        { key: 'house',        name: 'House',           value: 3, count: 3,  text: 'Add to a complete set to add 3M to its rent. Not on Railroads or Utilities.' },
-  hotel:        { key: 'hotel',        name: 'Hotel',           value: 4, count: 2,  text: 'Add to a complete set that has a House to add 4M more to its rent.' },
-  doubleRent:   { key: 'doubleRent',   name: 'Double The Rent', value: 1, count: 2,  text: 'Play with a rent card to double the rent. Counts as one of your 3 plays.' }
+  dealBreaker:  { key: 'dealBreaker',  name: 'Deal Breakerer',          value: 5, count: 2,  text: 'Steal a complete set from any player, including any House or Hotel on it.' },
+  justSayNo:    { key: 'justSayNo',    name: 'Just Say No Thanks',      value: 4, count: 3,  text: 'Cancel an action card played against you. Can itself be cancelled by another Just Say No Thanks.' },
+  passGo:       { key: 'passGo',       name: 'Pass Go Twice',           value: 1, count: 10, text: 'Draw 2 extra cards.' },
+  forcedDeal:   { key: 'forcedDeal',   name: 'Politely Forced Deal',    value: 3, count: 3,  text: 'Swap one of your properties for one of another player’s. Neither may come from a complete set.' },
+  slyDeal:      { key: 'slyDeal',      name: 'Extra Sly Deal',          value: 3, count: 3,  text: 'Steal a property from any player. It may not come from a complete set.' },
+  debtCollector:{ key: 'debtCollector',name: 'Grumpy Debt Collector',   value: 3, count: 3,  text: 'One player of your choice pays you 5M.' },
+  birthday:     { key: 'birthday',     name: 'It’s My Birthday (Again)', value: 2, count: 3, text: 'Every player pays you 2M.' },
+  house:        { key: 'house',        name: 'Humble House',            value: 3, count: 3,  text: 'Add to a complete set to add 3M to its rent. Not on Railroads or Utilities.' },
+  hotel:        { key: 'hotel',        name: 'Fancy Hotel',             value: 4, count: 2,  text: 'Add to a complete set that has a Humble House to add 4M more to its rent.' },
+  doubleRent:   { key: 'doubleRent',   name: 'Dubble The Rent',         value: 1, count: 2,  text: 'Play with a rent card to double the rent. Counts as one of your 3 plays.' }
 };
 
 export var DEBT_COLLECTOR_AMOUNT = 5;
@@ -152,8 +152,8 @@ export function cardName(card) {
     return 'Property Wild (' + COLORS[card.colors[0]].label + ' / ' + COLORS[card.colors[1]].label + ')';
   }
   if (card.kind === 'rent') {
-    if (card.colors === 'all') return 'Rent (any colour)';
-    return 'Rent (' + COLORS[card.colors[0]].label + ' / ' + COLORS[card.colors[1]].label + ')';
+    if (card.colors === 'all') return 'Rent, Please (any colour)';
+    return 'Rent, Please (' + COLORS[card.colors[0]].label + ' / ' + COLORS[card.colors[1]].label + ')';
   }
   return ACTIONS[card.action].name;
 }

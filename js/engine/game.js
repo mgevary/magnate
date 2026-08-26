@@ -454,12 +454,12 @@ function settleJsn(state, use) {
       var c = waiting.hand[i];
       if (c.kind === 'action' && c.action === 'justSayNo') { jsn = c; break; }
     }
-    if (!jsn) fail('no Veto card in hand');
+    if (!jsn) fail('no Just Say No Thanks in hand');
     removeById(waiting.hand, jsn.id);
     state.discard.push(jsn);
     claim.jsnCount++;
     emit(state, { type: 'jsn', player: waitingIdx, card: jsn });
-    log(state, waiting.name + ' plays Veto!');
+    log(state, waiting.name + ' says No Thanks!');
     claim.waitingOn = (waitingIdx === claim.victim) ? p.source : claim.victim;
     return; // window passes to the other side
   }
@@ -501,7 +501,7 @@ function executeTake(state) {
     var zone = victim.sets.splice(zi, 1)[0];
     source.sets.push(zone);
     emit(state, { type: 'dealBreaker', from: claim.victim, to: p.source, zone: zone.id });
-    log(state, source.name + ' takes ' + victim.name + '’s ' + COLORS[zone.color].label + ' set with Takeover!');
+    log(state, source.name + ' takes ' + victim.name + '’s ' + COLORS[zone.color].label + ' set with a Deal Breakerer!');
     cleanupZones(state, claim.victim);
     return;
   }
@@ -514,7 +514,7 @@ function executeTake(state) {
     cleanupZones(state, claim.victim);
     autoPlace(state, p.source, card);
     emit(state, { type: 'steal', from: claim.victim, to: p.source, card: card });
-    log(state, source.name + ' steals ' + cardName(card) + ' from ' + victim.name + ' with Land Grab.');
+    log(state, source.name + ' steals ' + cardName(card) + ' from ' + victim.name + ' with an Extra Sly Deal.');
     return;
   }
 
@@ -530,7 +530,7 @@ function executeTake(state) {
     autoPlace(state, p.source, took);
     autoPlace(state, claim.victim, gave);
     emit(state, { type: 'swap', from: claim.victim, to: p.source, took: took, gave: gave });
-    log(state, source.name + ' swaps ' + cardName(gave) + ' for ' + victim.name + '’s ' + cardName(took) + ' (Hard Bargain).');
+    log(state, source.name + ' swaps ' + cardName(gave) + ' for ' + victim.name + '’s ' + cardName(took) + ' (Politely Forced Deal).');
     return;
   }
 }
@@ -661,7 +661,7 @@ function doPlay(state, action) {
     if (card.kind !== 'action') fail('not an action card');
     var kind = card.action;
 
-    if (kind === 'justSayNo') fail('Veto is played as a response, or banked');
+    if (kind === 'justSayNo') fail('Just Say No Thanks is played as a response, or banked');
     if (kind === 'doubleRent') fail('Double The Rent is played with a rent card, or banked');
 
     if (kind === 'passGo') {
@@ -669,7 +669,7 @@ function doPlay(state, action) {
       removeById(me.hand, card.id);
       state.discard.push(card);
       emit(state, { type: 'action', player: state.active, card: card });
-      log(state, me.name + ' plays Windfall and draws 2.');
+      log(state, me.name + ' passes Go (twice!) and draws 2.');
       drawCards(state, state.active, 2);
       return;
     }
@@ -700,7 +700,7 @@ function doPlay(state, action) {
       var vs = [];
       for (var b = 1; b < state.players.length; b++) vs.push((state.active + b) % state.players.length);
       emit(state, { type: 'action', player: state.active, card: card });
-      log(state, me.name + ' passes the hat — everyone owes 2M.');
+      log(state, me.name + ' declares it’s their birthday (again) — everyone owes 2M.');
       openDemand(state, 'birthday', state.active, vs, BIRTHDAY_AMOUNT, null);
       return;
     }
@@ -712,7 +712,7 @@ function doPlay(state, action) {
       removeById(me.hand, card.id);
       state.discard.push(card);
       emit(state, { type: 'action', player: state.active, card: card, victim: v });
-      log(state, me.name + ' sends the Debt Collector to ' + pname(state, v) + ' — 5M owed.');
+      log(state, me.name + ' sends the Grumpy Debt Collector to ' + pname(state, v) + ' — 5M owed.');
       openDemand(state, 'debtCollector', state.active, [v], DEBT_COLLECTOR_AMOUNT, null);
       return;
     }
@@ -722,12 +722,12 @@ function doPlay(state, action) {
       if (!vic || action.victim === state.active) fail('choose a player');
       var zz = findById(vic.sets, action.zoneId);
       if (!zz) fail('choose a set');
-      if (!isZoneComplete(zz)) fail('Takeover only takes complete sets');
+      if (!isZoneComplete(zz)) fail('Deal Breakerer only takes complete sets');
       spendPlay(state, 1);
       removeById(me.hand, card.id);
       state.discard.push(card);
       emit(state, { type: 'action', player: state.active, card: card, victim: action.victim });
-      log(state, me.name + ' plays Takeover on ' + vic.name + '’s ' + COLORS[zz.color].label + ' set!');
+      log(state, me.name + ' plays Deal Breakerer on ' + vic.name + '’s ' + COLORS[zz.color].label + ' set!');
       openTake(state, 'dealBreaker', state.active, action.victim, { zoneId: action.zoneId });
       return;
     }
@@ -742,7 +742,7 @@ function doPlay(state, action) {
       removeById(me.hand, card.id);
       state.discard.push(card);
       emit(state, { type: 'action', player: state.active, card: card, victim: action.victim });
-      log(state, me.name + ' plays Land Grab on ' + sv.name + '.');
+      log(state, me.name + ' plays Extra Sly Deal on ' + sv.name + '.');
       openTake(state, 'slyDeal', state.active, action.victim, { cardId: action.targetCardId });
       return;
     }
@@ -760,7 +760,7 @@ function doPlay(state, action) {
       removeById(me.hand, card.id);
       state.discard.push(card);
       emit(state, { type: 'action', player: state.active, card: card, victim: action.victim });
-      log(state, me.name + ' plays Hard Bargain on ' + fv.name + '.');
+      log(state, me.name + ' plays Politely Forced Deal on ' + fv.name + '.');
       openTake(state, 'forcedDeal', state.active, action.victim, { cardId: action.targetCardId, giveCardId: action.giveCardId });
       return;
     }
@@ -851,7 +851,7 @@ function doDiscard(state, action) {
 
 function doRespondJsn(state, action) {
   var claim = currentClaim(state);
-  if (!claim || claim.stage !== 'jsn') fail('no Veto window open');
+  if (!claim || claim.stage !== 'jsn') fail('no Just Say No Thanks window open');
   if (action.player !== claim.waitingOn) fail('not your response');
   settleJsn(state, !!action.use);
   normalizePending(state);

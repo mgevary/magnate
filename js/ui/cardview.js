@@ -130,7 +130,7 @@ export function cardEl(card, cls) {
 
   if (card.kind === 'rent') {
     root.className += ' c-rent';
-    var rband = el('div', { class: 'prop-band', text: 'RENT' });
+    var rband = el('div', { class: 'prop-band', text: 'RENT, PLEASE' });
     if (card.colors === 'all') {
       rband.style.background = rainbowGradient();
       rband.style.color = '#fff';
