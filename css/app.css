@@ -413,6 +413,15 @@ button { font-family: inherit; }
   width: 190px; margin: 6px auto;
 }
 .qr-box svg { display: block; width: 100%; height: auto; }
+.qr-box.qr-dense { width: 240px; }
+
+/* camera QR scanner */
+.scan-wrap { text-align: center; }
+.scan-video {
+  width: 100%; max-width: 340px;
+  border-radius: 12px;
+  background: #000;
+}
 
 /* ── toast ─────────────────────────────────────────────────────── */
 #toast {

@@ -19,6 +19,7 @@ import {
   net, probeLan, connect, createRoom, joinRoom, startGame as netStart,
   rematch as netRematch, sendAction, refreshRooms, leaveRoom, disconnect
 } from './net.js';
+import { createHost, createJoiner, encodeSignal, decodeSignal, loadScript } from './p2p.js';
 import { RULES_HTML } from './ui/rules.js';
 
 var SAVE_KEY = 'magnate-save-v1';
@@ -55,6 +56,26 @@ window.MAGNATE = {
     var a = botDecide(App.state, 0);
     netAct(a || { type: 'endTurn' });
     return true;
+  },
+  // Device-to-device testing hooks (bypass the QR/camera exchange only)
+  p2pHostCreate: function (bots, diff) {
+    return loadScript('js/vendor/pako.js').then(function () {
+      var host = createHost({ name: getActive().name, bots: bots || 0, diff: diff || 'balanced' });
+      App.p2pHost = host;
+      attachHost(host);
+      return host.makeOffer();
+    });
+  },
+  p2pHostAccept: function (answerCode) { return App.p2pHost.acceptAnswer(answerCode); },
+  p2pHostStart: function () { App.p2pHost.start(); },
+  p2pJoinDirect: function (offerCode) {
+    return loadScript('js/vendor/pako.js').then(function () {
+      return createJoiner(offerCode, getActive().name);
+    }).then(function (res) {
+      App.p2pJoiner = res.joiner;
+      attachJoiner(res.joiner);
+      return res.answerCode;
+    });
   }
 };
 
@@ -181,6 +202,10 @@ function buildHome() {
     onTap: function () { openWifi(null); }
   }));
   box.appendChild(el('button', {
+    class: 'btn btn-secondary btn-big', text: 'Device-to-device (no server)',
+    onTap: function () { showP2pSheet(); }
+  }));
+  box.appendChild(el('button', {
     class: 'btn btn-secondary btn-big', text: 'How to play',
     onTap: function () { showRules(); }
   }));
@@ -225,6 +250,10 @@ function wireNetHandlers() {
   net.onRoom = function (room) { showRoomSheet(room); };
   net.onState = function (view) {
     App.mode = 'net';
+    App.sendActionFn = sendAction;
+    App.isHost = !!(net.room && net.room.host);
+    App.rematchFn = netRematch;
+    App.leaveFn = leaveNetGame;
     App.state = view;
     closeSheet();
     showScreen('screen-game');
@@ -344,6 +373,289 @@ function showRoomSheet(room) {
   });
 }
 
+/* ── device-to-device (serverless WebRTC) ────────────────────────── */
+
+function qrEl(text) {
+  var box = el('div', { class: 'qr-box qr-dense' });
+  try {
+    var qr = window.qrcode(0, 'L');
+    qr.addData(text);
+    qr.make();
+    box.innerHTML = qr.createSvgTag({ cellSize: 3, margin: 2 });
+  } catch (e) {
+    box.appendChild(el('div', { class: 'sheet-hint', text: 'Code too large for QR — use copy/paste below.' }));
+  }
+  return box;
+}
+
+function loadP2pLibs(cb) {
+  loadScript('js/vendor/pako.js').then(function () { cb(null); })
+    .catch(function (e) { cb(e); });
+}
+
+function showP2pSheet() {
+  var content = el('div', {});
+  content.appendChild(el('div', { class: 'sheet-hint', html:
+    'Direct device-to-device play — <b>no server, no internet</b>. Both devices just need to be on the same WiFi network or one phone’s Personal Hotspot.<br><br>' +
+    '<b>To join a game:</b> scan the host’s QR with your camera app.' }));
+  showSheet({
+    title: 'Device-to-device',
+    content: content,
+    buttons: [{
+      label: 'Host a game', cls: 'btn-primary',
+      onTap: function () { showP2pHostConfig(); }
+    }]
+  });
+}
+
+function showP2pHostConfig() {
+  var chosen = { bots: 0, diff: 'balanced' };
+  var content = el('div', {});
+  content.appendChild(el('div', { class: 'group-label', text: 'Bot seats' }));
+  var segB = el('div', { class: 'seg' });
+  [0, 1, 2, 3].forEach(function (nBots, bi) {
+    segB.appendChild(el('button', {
+      class: 'seg-btn' + (nBots === chosen.bots ? ' on' : ''), text: String(nBots),
+      onTap: function () {
+        chosen.bots = nBots;
+        Array.prototype.forEach.call(segB.children, function (c, i) { c.className = 'seg-btn' + (i === bi ? ' on' : ''); });
+      }
+    }));
+  });
+  content.appendChild(segB);
+  var segD = el('div', { class: 'seg' });
+  [['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']].forEach(function (d, di) {
+    segD.appendChild(el('button', {
+      class: 'seg-btn' + (d[0] === chosen.diff ? ' on' : ''), text: d[1],
+      onTap: function () {
+        chosen.diff = d[0];
+        Array.prototype.forEach.call(segD.children, function (c, i) { c.className = 'seg-btn' + (i === di ? ' on' : ''); });
+      }
+    }));
+  });
+  content.appendChild(segD);
+  showSheet({
+    title: 'Host a game',
+    content: content,
+    buttons: [{
+      label: 'Create invite', cls: 'btn-primary',
+      onTap: function () {
+        loadP2pLibs(function (err) {
+          if (err) { showToast('Could not load connection code library.'); return; }
+          startP2pHost(chosen.bots, chosen.diff);
+        });
+      }
+    }]
+  });
+}
+
+function attachHost(host) {
+  App.mode = 'net';
+  App.isHost = true;
+  App.sendActionFn = function (a) { host.localAction(a); };
+  App.rematchFn = function () { host.rematch(); };
+  App.leaveFn = function () { host.destroy(); App.p2pHost = null; App.mode = 'solo'; App.state = null; goHome(); };
+  host.onState = function (state) {
+    App.state = state;
+    closeSheet();
+    showScreen('screen-game');
+    netLoop();
+  };
+  host.onError = function (msg) { showToast(msg); };
+}
+
+function attachJoiner(joiner) {
+  App.mode = 'net';
+  App.isHost = false;
+  App.sendActionFn = function (a) { joiner.send(a); };
+  App.rematchFn = null;
+  App.leaveFn = function () { joiner.destroy(); App.p2pJoiner = null; App.mode = 'solo'; App.state = null; goHome(); };
+  joiner.onState = function (view) {
+    App.state = view;
+    closeSheet();
+    showScreen('screen-game');
+    netLoop();
+  };
+  joiner.onError = function (msg) { showToast(msg); };
+  joiner.onClose = function () {
+    if (App.mode === 'net') {
+      showSheet({
+        title: 'Connection lost',
+        sub: 'The host went away.',
+        noCancel: true,
+        buttons: [{ label: 'Home', cls: 'btn-primary', onTap: function () { closeSheet(); App.leaveFn(); } }]
+      });
+    }
+  };
+}
+
+function startP2pHost(bots, diff) {
+  var host = createHost({ name: getActive().name, bots: bots, diff: diff });
+  App.p2pHost = host;
+  attachHost(host);
+  showP2pHostLobby(host);
+}
+
+function showP2pHostLobby(host) {
+  host.makeOffer().then(function (offerCode) {
+    var joinUrl = window.location.origin + window.location.pathname + '#p2p=' + offerCode;
+    var content = el('div', {});
+    content.appendChild(el('div', { class: 'group-label', text: 'Players' }));
+    host.seatNames().forEach(function (n, i) {
+      content.appendChild(el('div', { class: 'record-row' }, [
+        el('span', { class: 'record-diff', text: n + (i === 0 ? ' — you (host)' : '') }),
+        el('span', { class: 'record-wl', text: 'ready' })
+      ]));
+    });
+    content.appendChild(el('div', { class: 'group-label', text: 'Invite the next player' }));
+    content.appendChild(el('div', { class: 'sheet-hint', text: '1. They scan this with their camera app:' }));
+    content.appendChild(qrEl(joinUrl));
+    content.appendChild(el('div', { class: 'sheet-hint', text: '2. Their screen will show an answer QR — tap below to scan it with this device’s camera.' }));
+
+    var pasteTa = el('textarea', { class: 'text-area', placeholder: 'No camera? Paste their answer code here instead.' });
+
+    function acceptCode(code) {
+      code = String(code || '').replace(/\s+/g, '');
+      var m2 = /p2p-ans=([A-Za-z0-9_-]+)/.exec(code);
+      if (m2) code = m2[1];
+      try {
+        host.acceptAnswer(code).then(function () {
+          showToast('Player connected!');
+          showP2pHostLobby(host); // fresh invite for the next player
+        }).catch(function (e) { showToast(e.message); });
+      } catch (e) { showToast(e.message); }
+    }
+
+    content.appendChild(pasteTa);
+
+    var canStart = host.peers.length + host.cfg.bots >= 1;
+    showSheet({
+      title: 'Device-to-device game',
+      content: content,
+      buttons: [
+        {
+          label: 'Scan answer with camera', cls: 'btn-secondary',
+          onTap: function () { openScanner(acceptCode, function () { showP2pHostLobby(host); }); }
+        },
+        {
+          label: 'Use pasted answer', cls: 'btn-secondary',
+          onTap: function () { if (pasteTa.value) acceptCode(pasteTa.value); }
+        },
+        {
+          label: canStart ? 'Start game' : 'Start game (add a player or bot first)',
+          cls: 'btn-primary', disabled: !canStart,
+          onTap: function () {
+            try { host.start(); } catch (e) { showToast(e.message); }
+          }
+        }
+      ],
+      cancelLabel: 'Cancel game',
+      onCancel: function () { App.leaveFn(); }
+    });
+  }).catch(function (e) {
+    showToast('Could not create invite: ' + e.message);
+  });
+}
+
+function startP2pJoin(offerCode) {
+  loadP2pLibs(function (err) {
+    if (err) { showToast('Could not load connection code library.'); return; }
+    createJoiner(offerCode, getActive().name).then(function (res) {
+      App.p2pJoiner = res.joiner;
+      attachJoiner(res.joiner);
+      var content = el('div', {});
+      content.appendChild(el('div', { class: 'sheet-hint', text: 'Show this answer QR to the host — they scan it with their camera to let you in.' }));
+      content.appendChild(qrEl('p2p-ans=' + res.answerCode));
+      var ta = el('textarea', { class: 'text-area', readonly: 'readonly' });
+      ta.value = res.answerCode;
+      ta.addEventListener('click', function () { ta.select(); });
+      content.appendChild(el('div', { class: 'sheet-hint', text: '…or send them this code:' }));
+      content.appendChild(ta);
+      var panel = showSheet({
+        title: 'Almost in!',
+        content: content,
+        buttons: [],
+        cancelLabel: 'Cancel',
+        onCancel: function () { App.leaveFn(); }
+      });
+      res.joiner.onOpen = function () {
+        var body = panel.querySelector('.sheet-body');
+        if (body) {
+          clear(body);
+          body.appendChild(el('div', { class: 'sheet-hint', text: '✔ Connected — waiting for the host to start the game…' }));
+        }
+      };
+    }).catch(function (e) {
+      showSheet({
+        title: 'Couldn’t join',
+        sub: e.message,
+        buttons: [{ label: 'OK', cls: 'btn-primary', onTap: closeSheet }]
+      });
+    });
+  });
+}
+
+/* camera QR scanner (host side) */
+function openScanner(onCode, onCancel) {
+  loadScript('js/vendor/jsqr.js').then(function () {
+    var video = document.createElement('video');
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('muted', 'true');
+    video.setAttribute('autoplay', 'true');
+    video.className = 'scan-video';
+    var content = el('div', { class: 'scan-wrap' }, [video]);
+    var stream = null, timer = null, closed = false;
+
+    function stop() {
+      closed = true;
+      if (timer) clearInterval(timer);
+      if (stream) stream.getTracks().forEach(function (t) { t.stop(); });
+    }
+
+    showSheet({
+      title: 'Scan the answer QR',
+      content: content,
+      buttons: [],
+      cancelLabel: 'Cancel',
+      onCancel: function () { stop(); if (onCancel) onCancel(); }
+    });
+
+    var gum = navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+      ? navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      : Promise.reject(new Error('no camera API'));
+
+    gum.then(function (s) {
+      if (closed) { s.getTracks().forEach(function (t) { t.stop(); }); return; }
+      stream = s;
+      video.srcObject = s;
+      video.play();
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      timer = setInterval(function () {
+        if (!video.videoWidth) return;
+        var w = 400, h = Math.round(400 * video.videoHeight / video.videoWidth);
+        canvas.width = w; canvas.height = h;
+        ctx.drawImage(video, 0, 0, w, h);
+        var img = ctx.getImageData(0, 0, w, h);
+        var found = window.jsQR(img.data, w, h);
+        if (found && found.data) {
+          stop();
+          closeSheet();
+          onCode(found.data);
+        }
+      }, 280);
+    }).catch(function () {
+      stop();
+      closeSheet();
+      showSheet({
+        title: 'Camera unavailable',
+        sub: 'Use the paste box instead: have the joiner copy their answer code and send it to you (Messages/AirDrop), then paste it.',
+        buttons: [{ label: 'OK', cls: 'btn-primary', onTap: function () { closeSheet(); if (onCancel) onCancel(); } }]
+      });
+    });
+  }).catch(function () { showToast('Could not load the QR scanner.'); });
+}
+
 var netHandlers = {
   onHandCard: function (card) { showPlaySheet(App.state, card, netAct); },
   onTableCard: function (card, zone) { showRearrangeSheet(App.state, card, zone, netAct); },
@@ -353,7 +665,8 @@ var netHandlers = {
 
 function netAct(action) {
   closeSheet();
-  sendAction(action); // server validates; fresh state arrives by message
+  // whichever transport is live (LAN server, p2p host, p2p joiner)
+  if (App.sendActionFn) App.sendActionFn(action);
 }
 
 function netLoop() {
@@ -369,13 +682,12 @@ function netLoop() {
 
   if (state.winner !== null) {
     var winner = state.players[state.winner];
-    var isHost = net.room && net.room.host;
     showSheet({
       title: state.winner === 0 ? '🏆 You win!' : winner.name + ' wins',
-      sub: 'WiFi game complete.',
+      sub: 'Multiplayer game complete.',
       noCancel: true,
-      buttons: (isHost ? [{ label: 'Rematch', cls: 'btn-primary', onTap: function () { closeSheet(); netRematch(); } }] : []).concat([
-        { label: 'Leave', cls: 'btn-secondary', onTap: function () { closeSheet(); leaveNetGame(); } }
+      buttons: (App.isHost && App.rematchFn ? [{ label: 'Rematch', cls: 'btn-primary', onTap: function () { closeSheet(); App.rematchFn(); } }] : []).concat([
+        { label: 'Leave', cls: 'btn-secondary', onTap: function () { closeSheet(); if (App.leaveFn) App.leaveFn(); } }
       ])
     });
     return;
@@ -709,6 +1021,14 @@ function boot() {
     try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { window.location.hash = ''; }
     goHome();
     openWifi(m[1].toUpperCase());
+    return;
+  }
+  // Deep link from a device-to-device invite QR: /#p2p=<code>
+  var mp = /p2p=([A-Za-z0-9_-]+)/.exec(window.location.hash || '');
+  if (mp) {
+    try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { window.location.hash = ''; }
+    goHome();
+    startP2pJoin(mp[1]);
     return;
   }
   goHome();
