@@ -3,14 +3,12 @@
 // be saved as a file and restored later. ES2018 / Safari 12.
 
 var KEY = 'magnate-profiles-v1';
-export var DIFF_KEYS = ['easy', 'balanced', 'shark'];
+export var DIFF_KEYS = ['beginner', 'easy', 'balanced', 'shark'];
 
 function blankRecords() {
-  return {
-    easy: { w: 0, l: 0 },
-    balanced: { w: 0, l: 0 },
-    shark: { w: 0, l: 0 }
-  };
+  var r = {};
+  DIFF_KEYS.forEach(function (d) { r[d] = { w: 0, l: 0 }; });
+  return r;
 }
 
 function blankProfile(name) {

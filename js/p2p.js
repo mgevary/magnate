@@ -81,7 +81,7 @@ function waitIce(pc) {
 
 /* ── host session ────────────────────────────────────────────────── */
 
-var BOT_NAMES = { easy: ['Penny', 'Louie', 'Daisy'], balanced: ['Victor', 'Greta', 'Sal'], shark: ['Vanderbilt', 'Astor', 'Rockford'] };
+var BOT_NAMES = { beginner: ['Pip', 'Scout', 'Bunny'], easy: ['Penny', 'Louie', 'Daisy'], balanced: ['Victor', 'Greta', 'Sal'], shark: ['Vanderbilt', 'Astor', 'Rockford'] };
 
 export function createHost(cfg) {
   var host = {

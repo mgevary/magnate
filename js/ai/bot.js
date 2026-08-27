@@ -19,6 +19,7 @@ var rng = Math.random;
 export function setRng(f) { rng = f; }
 
 export var PERSONALITIES = {
+  beginner: { label: 'Beginner', holdback1: 0.45, holdback2: 0.60, jsnSmart: false, threatAware: false, mistake: 0.50, sloppy: true },
   easy:     { label: 'Easy',   holdback1: 0.25, holdback2: 0.40, jsnSmart: false, threatAware: false, mistake: 0.30 },
   balanced: { label: 'Normal', holdback1: 0.05, holdback2: 0.15, jsnSmart: true,  threatAware: true,  mistake: 0.06 },
   shark:    { label: 'Hard',   holdback1: 0.00, holdback2: 0.06, jsnSmart: true,  threatAware: true,  mistake: 0.00 }
@@ -137,6 +138,25 @@ function surrenderCost(player, card, inZone) {
 
 export function choosePayment(state, idx, amount) {
   var player = state.players[idx];
+  var p = P(state, idx);
+
+  // Beginners pay sloppily: grab cards in shuffled order until covered —
+  // overpaying and handing properties over where a sharper player
+  // wouldn't.
+  if (p.sloppy) {
+    var pool = payableCards(player).slice();
+    for (var si = pool.length - 1; si > 0; si--) {
+      var sj = Math.floor(rng() * (si + 1));
+      var tmp = pool[si]; pool[si] = pool[sj]; pool[sj] = tmp;
+    }
+    var picked = [], sum = 0;
+    for (var pi = 0; pi < pool.length && sum < amount; pi++) {
+      picked.push(pool[pi].id);
+      sum += pool[pi].value;
+    }
+    return picked;
+  }
+
   var avail = [];
   player.bank.forEach(function (c) { avail.push({ card: c, cost: surrenderCost(player, c, null) }); });
   player.sets.forEach(function (z) {
@@ -224,7 +244,10 @@ function decideJsn(state, idx) {
   var iAmVictim = claim.waitingOn === claim.victim;
   if (!p.jsnSmart) {
     // Easy: blocks Deal Breakers usually, otherwise coin-flippy.
-    var chance = pending.action === 'dealBreaker' ? 0.8 : 0.3;
+    // Beginner: forgets it even has the card most of the time.
+    var chance = p.sloppy
+      ? (pending.action === 'dealBreaker' ? 0.3 : 0.1)
+      : (pending.action === 'dealBreaker' ? 0.8 : 0.3);
     return { type: 'respondJsn', player: idx, use: rng() < chance };
   }
 
@@ -481,7 +504,10 @@ function decideMainPlay(state, idx) {
   plays.sort(function (a, b) { return b.score - a.score; });
 
   var pickIdx = 0;
-  if (plays.length > 1 && rng() < p.mistake) pickIdx = 1;
+  if (plays.length > 1 && rng() < p.mistake) {
+    // Beginners grab any old card; others merely second-guess themselves.
+    pickIdx = p.sloppy ? Math.floor(rng() * plays.length) : 1;
+  }
   var chosen = plays[pickIdx];
   if (chosen.score < 2.2 && used > 0) return { type: 'endTurn' }; // nothing worthwhile
   return chosen.action;

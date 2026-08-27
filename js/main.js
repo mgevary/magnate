@@ -80,6 +80,7 @@ window.MAGNATE = {
 };
 
 var BOT_NAMES = {
+  beginner: ['Pip', 'Scout', 'Bunny'],
   easy: ['Penny', 'Louie', 'Daisy'],
   balanced: ['Victor', 'Greta', 'Sal'],
   shark: ['Vanderbilt', 'Astor', 'Rockford']
@@ -178,7 +179,7 @@ function buildHome() {
   box.appendChild(segO);
 
   box.appendChild(el('div', { class: 'home-label', text: 'Difficulty' }));
-  var diffs = [['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']];
+  var diffs = [['beginner', 'Beginner'], ['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']];
   var segD = el('div', { class: 'seg' });
   diffs.forEach(function (d, di) {
     segD.appendChild(el('button', {
@@ -307,7 +308,7 @@ function showWifiLobby() {
   });
   content.appendChild(segB);
   var segD = el('div', { class: 'seg' });
-  [['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']].forEach(function (d, di) {
+  [['beginner', 'Beginner'], ['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']].forEach(function (d, di) {
     segD.appendChild(el('button', {
       class: 'seg-btn' + (d[0] === chosen.diff ? ' on' : ''), text: d[1],
       onTap: function () {
@@ -424,7 +425,7 @@ function showP2pHostConfig() {
   });
   content.appendChild(segB);
   var segD = el('div', { class: 'seg' });
-  [['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']].forEach(function (d, di) {
+  [['beginner', 'Beginner'], ['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']].forEach(function (d, di) {
     segD.appendChild(el('button', {
       class: 'seg-btn' + (d[0] === chosen.diff ? ' on' : ''), text: d[1],
       onTap: function () {
