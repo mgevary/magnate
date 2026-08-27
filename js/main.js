@@ -992,7 +992,22 @@ function botStep(idx) {
 
 /* ── boot ────────────────────────────────────────────────────────── */
 
+// iOS Safari's 100% height includes the area behind its collapsing
+// toolbars; track the real visible height instead so the hand is never
+// hidden behind browser chrome.
+function setVh() {
+  try {
+    document.documentElement.style.setProperty('--vh', window.innerHeight + 'px');
+  } catch (e) { }
+}
+
 function boot() {
+  setVh();
+  window.addEventListener('resize', setVh);
+  window.addEventListener('orientationchange', function () {
+    setVh();
+    setTimeout(setVh, 350); // Safari reports stale sizes right after rotate
+  });
   qs('#rules-back').addEventListener('click', function () {
     if (App.state && App.state.winner === null) {
       showScreen('screen-game');

@@ -84,7 +84,7 @@ button { font-family: inherit; }
 .seg-btn.on { background: #d8a531; color: #241a04; border-color: #d8a531; font-weight: 700; }
 
 /* ── home screen ───────────────────────────────────────────────── */
-#screen-home { height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; }
+#screen-home { height: 100%; height: var(--vh, 100%); overflow: auto; -webkit-overflow-scrolling: touch; }
 .home-inner { max-width: 420px; margin: 0 auto; padding: 40px 24px; text-align: center; }
 .logo-m {
   width: 84px; height: 84px; line-height: 84px;
@@ -146,7 +146,17 @@ button { font-family: inherit; }
 .file-input { display: block; width: 100%; margin: 4px 0; font-size: 14px; }
 
 /* ── game screen frame ─────────────────────────────────────────── */
-#screen-game { height: 100%; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+/* --vh = real visible height (set from JS); Safari's own 100% includes
+   the area hidden behind its toolbars */
+#screen-game {
+  height: 100%;
+  height: var(--vh, 100%);
+  display: flex; flex-direction: column; position: relative; overflow: hidden;
+}
+/* if space runs out, the seats and centre give way — never the hand */
+#topbar { flex-shrink: 1; min-height: 60px; overflow: hidden; }
+#center { flex-shrink: 1; overflow: hidden; }
+#my-area, #hand-wrap { flex-shrink: 0; }
 
 /* the felt oval everyone sits around */
 #table-oval {
@@ -559,7 +569,7 @@ button { font-family: inherit; }
 }
 
 /* ── rules ─────────────────────────────────────────────────────── */
-#screen-rules { height: 100%; display: flex; flex-direction: column; }
+#screen-rules { height: 100%; height: var(--vh, 100%); display: flex; flex-direction: column; }
 .rules-head { display: flex; align-items: center; padding: 10px; }
 .rules-head h2 { margin-left: 10px; font-size: 20px; }
 .rules-body {
