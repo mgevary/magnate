@@ -197,7 +197,13 @@ button { font-family: inherit; }
 .opp-handn { font-size: 11px; opacity: .8; margin: 0 10px 0 16px; }
 .opp-bank { font-size: 11px; font-weight: 700; color: #cfe6b8; }
 
-.opp-table { display: flex; flex-wrap: wrap; align-items: flex-start; }
+.opp-table {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  /* a busy opponent can never push the layout: extra rows scroll inside */
+  max-height: 158px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .opp-table .zone { margin: 0 6px 4px 0; }
 .opp-bankfan { margin: 0 8px 4px 0; }
 .opp-empty { font-size: 11px; opacity: .45; padding: 4px 0; }
@@ -464,6 +470,7 @@ button { font-family: inherit; }
   .opp-handfan .card { margin-right: -16px; }
   .opp-handn { margin: 0 6px 0 12px; }
   .opp-table .zone { margin: 0 4px 3px 0; }
+  .opp-table { max-height: 100px; }
   .zone-cards.zc-mini .card + .card { margin-left: -34px; }
 
   #table-oval { top: 28px; bottom: 140px; left: -30%; right: -30%; }
