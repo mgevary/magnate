@@ -2,6 +2,8 @@
 // persistence. ES2018 / Safari 12.
 
 import { newGame, dispatch, whatsPending } from './engine/game.js';
+import { buildDeck } from './engine/cards.js';
+import { cardEl } from './ui/cardview.js';
 import { botDecide } from './ai/bot.js';
 import { render, showToast } from './ui/render.js';
 import { el, clear, qs } from './ui/dom.js';
@@ -148,9 +150,46 @@ function profileCard() {
   return card;
 }
 
+// Deco section label: gold hairline — TEXT — gold hairline.
+function decoLabel(text) {
+  return el('div', { class: 'home-label' }, [
+    el('i', {}), el('span', { text: text }), el('i', {})
+  ]);
+}
+
+// A fan of real cards on the landing page — the same renderer the table
+// uses, so the home screen shows the actual deck.
+function homeFan() {
+  var host = qs('#home-cardfan');
+  if (!host) return;
+  clear(host);
+  var deck = buildDeck();
+  function pick(pred) {
+    for (var i = 0; i < deck.length; i++) if (pred(deck[i])) return deck[i];
+    return null;
+  }
+  var picks = [
+    pick(function (c) { return c.kind === 'property' && c.color === 'red'; }),
+    pick(function (c) { return c.kind === 'action' && c.action === 'dealBreaker'; }),
+    pick(function (c) { return c.kind === 'property' && c.color === 'darkblue'; }),
+    pick(function (c) { return c.kind === 'rent' && c.colors === 'all'; }),
+    pick(function (c) { return c.kind === 'money' && c.value === 5; })
+  ].filter(function (c) { return !!c; });
+
+  var mid = (picks.length - 1) / 2;
+  picks.forEach(function (card, i) {
+    var slot = el('div', { class: 'fan-slot' });
+    var off = i - mid;
+    slot.style.transform = 'rotate(' + (off * 7) + 'deg) translateY(' + Math.abs(off) * 9 + 'px)';
+    slot.appendChild(cardEl(card, 'small'));
+    host.appendChild(slot);
+  });
+}
+
 function buildHome() {
   var saved = loadSave();
   var box = clear(qs('#home-menu'));
+  homeFan();
 
   box.appendChild(profileCard());
 
@@ -163,7 +202,7 @@ function buildHome() {
 
   var chosen = { opps: 2, diff: 'balanced' };
 
-  box.appendChild(el('div', { class: 'home-label', text: 'Opponents' }));
+  box.appendChild(decoLabel('Opponents'));
   var segO = el('div', { class: 'seg' });
   [1, 2, 3].forEach(function (n) {
     segO.appendChild(el('button', {
@@ -178,7 +217,7 @@ function buildHome() {
   });
   box.appendChild(segO);
 
-  box.appendChild(el('div', { class: 'home-label', text: 'Difficulty' }));
+  box.appendChild(decoLabel('Difficulty'));
   var diffs = [['beginner', 'Beginner'], ['easy', 'Easy'], ['balanced', 'Normal'], ['shark', 'Hard']];
   var segD = el('div', { class: 'seg' });
   diffs.forEach(function (d, di) {
@@ -195,19 +234,23 @@ function buildHome() {
   box.appendChild(segD);
 
   box.appendChild(el('button', {
-    class: 'btn btn-primary btn-big', text: 'New game',
+    class: 'btn btn-primary btn-big btn-deal', text: 'Deal me in',
     onTap: function () { startNew(chosen.opps, chosen.diff); }
   }));
+
+  box.appendChild(decoLabel('Play with others'));
+  box.appendChild(el('div', { class: 'home-mp-row' }, [
+    el('button', {
+      class: 'btn btn-secondary btn-big', text: 'On this WiFi',
+      onTap: function () { openWifi(null); }
+    }),
+    el('button', {
+      class: 'btn btn-secondary btn-big', text: 'Device to device',
+      onTap: function () { showP2pSheet(); }
+    })
+  ]));
   box.appendChild(el('button', {
-    class: 'btn btn-secondary btn-big', text: 'Play on WiFi (multiplayer)',
-    onTap: function () { openWifi(null); }
-  }));
-  box.appendChild(el('button', {
-    class: 'btn btn-secondary btn-big', text: 'Device-to-device (no server)',
-    onTap: function () { showP2pSheet(); }
-  }));
-  box.appendChild(el('button', {
-    class: 'btn btn-secondary btn-big', text: 'How to play',
+    class: 'btn btn-ghost btn-big btn-rules', text: 'How to play',
     onTap: function () { showRules(); }
   }));
 }

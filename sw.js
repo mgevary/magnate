@@ -4,7 +4,7 @@
 // hash; a new deploy installs a fresh cache and retires the old one.
 // ES2017-safe for the Safari 12 worker context.
 
-var VERSION = 'b87226d';
+var VERSION = '82f319b';
 var CACHE = 'magnate-' + VERSION;
 
 var ASSETS = [
@@ -50,7 +50,9 @@ var ASSETS = [
   'art/action-house.jpg',
   'art/action-hotel.jpg',
   'art/action-doubleRent.jpg',
-  'art/card-back.jpg'
+  'art/card-back.jpg',
+  'art/hero-banner.jpg',
+  'art/logo-emblem.jpg'
 ];
 
 self.addEventListener('install', function (event) {
